@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zeroquery Text Chat Viewer</title>
+  <title>Zeroquery Text Chat Viewer (Responsive)</title>
   <style>
     /* =========================================
-       제공된 label.css 스타일 (전체 포함)
+       디자인 시스템 시스템 스타일 & 반응형 패치
        ========================================= */
     :root {
       --bg: #eef1f5; --panel: #ffffff; --ink: #15171a; --muted: #6f7782;
@@ -16,18 +16,25 @@
     }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
+    
     body {
       margin: 0; min-width: 0; overflow: hidden; background: var(--bg); color: var(--ink);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
     }
     button, input, select, textarea { font: inherit; }
-    .workspace { height: 100svh; display: grid; grid-template-rows: auto 1fr; gap: 12px; padding: 16px; font-size: 14px; line-height: 1.4; }
+    
+    .workspace {
+      height: 100svh; display: grid; grid-template-rows: auto 1fr; gap: 12px;
+      padding: 16px; font-size: 14px; line-height: 1.4;
+    }
     .label-workspace { width: 100%; max-width: 1840px; margin-inline: auto; padding: clamp(14px, 1.2vw, 20px); }
+    
     .topbar { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
     .topbar h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
     .topbar p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
     .app-header { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(0, auto); align-items: start; column-gap: 16px; min-height: 46px; padding-bottom: 2px; }
     .app-title-block { min-width: 0; }
+    
     .label-grid { min-height: 0; display: grid; grid-template-columns: minmax(560px, 1fr) clamp(520px, 38vw, 640px); grid-template-areas: "chat label"; gap: 16px; align-items: stretch; }
     
     /* Chat Panel Styles */
@@ -68,11 +75,48 @@
     .primary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; width: 100%; }
     .primary-action:hover { opacity: 0.9; }
 
-    /* Responsive */
+    /* =========================================
+       반응형 미디어 쿼리 패치 (화면이 작아질 때 스크롤 활성화)
+       ========================================= */
     @media (max-width: 1180px) {
-      .label-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chat" "label"; }
-      .workspace { height: auto; overflow: visible; }
-      .label-panel { height: 500px; }
+      body {
+        overflow: auto; /* 창이 작아질 때 전체 브라우저 화면 스크롤 허용 */
+      }
+      .workspace {
+        height: auto;
+        min-height: 100svh;
+        overflow: visible;
+        padding: 12px;
+      }
+      .label-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: 
+          "chat"
+          "label";
+        gap: 12px;
+      }
+      .chat-panel {
+        height: 65vh; /* 모바일/태블릿 환경에서 대화창 영역 높이 제한하여 내부 메시지 스크롤 유지 */
+        min-height: 80vh;
+      }
+      .label-panel {
+        height: auto;
+        min-height: 350px;
+        overflow: visible;
+      }
+      .label-panel-body {
+        overflow: visible;
+      }
+      .admin-textarea {
+        min-height: 200px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .topbar h1 { font-size: 18px; }
+      .chat-header { padding: 8px 12px; min-height: auto; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .chat-header-tools { width: 100%; justify-content: space-between; }
+      .message-stack { max-width: 85%; }
     }
   </style>
 </head>
@@ -81,7 +125,7 @@
     <header class="topbar app-header">
       <div class="app-title-block">
         <h1>Zeroquery Text Chat Viewer</h1>
-        <p>DB/서버 연결 없이 구글 시트 텍스트를 대화방 포맷으로 파싱합니다.</p>
+        <p>DB/서버 연결 없이 구글 시트 텍스트를 대화방 포맷으로 파싱합니다. (반응형 지원)</p>
       </div>
     </header>
 
@@ -128,8 +172,8 @@
             <textarea
               id="rawTextInput"
               class="admin-textarea"
-              style="flex: 1; min-height: 300px; resize: none;"
-              placeholder="예시:&#10;나: 아빠 근무 끝났어?&#10;우리 아빠: 좀 전에 끝났다.&#10;나: 올 때 메로나 사다주세용&#10;..."
+              style="flex: 1; min-height: 250px; resize: vertical;"
+              placeholder="예:&#10;ego_014-sess-5e2282ee0469나: 아빠 근무 끝났어?&#10;우리 아빠: 좀 전에 끝났다.&#10;..."
             ></textarea>
           </section>
         </div>
@@ -192,7 +236,7 @@
 
     // 정교한 텍스트 파서
     function parseRawText(rawText) {
-      // 1. 구글시트 복사 시 딸려오는 헤더(conversation_id dialog_text 등) 제거
+      // 1. 구글시트 복사 시 딸려오는 헤더 제거
       let text = rawText.replace(/conversation_id\s*dialog_text/gi, '').trim();
       let blocks = [];
 
@@ -224,7 +268,7 @@
           for (let i = 0; i < parts.length; i++) {
             if (idRegex.test(parts[i])) {
               if (temp.trim()) blocks.push(temp.trim());
-              temp = parts[i]; // ID를 새 블록의 시작으로 편입
+              temp = parts[i];
             } else {
               temp += parts[i];
             }
@@ -233,12 +277,12 @@
         }
       }
 
-      // 4. 그래도 분할이 안 된 평범한 텍스트라면 더블 엔터나 구분선(---)으로 분할
+      // 4. 그래도 분할이 안 된 경우 구분선(---) 분할
       if (blocks.length <= 1) {
         blocks = text.split(/(?:\n\s*\n|---)/).filter(b => b.trim());
       }
 
-      // 5. 각 블록을 대화 메시지로 파싱 (Speaker: Text 구조)
+      // 5. 각 블록을 대화 메시지로 파싱
       const parsedConversations = [];
       
       blocks.forEach((block, idx) => {
@@ -247,7 +291,6 @@
         let topic = `대화방 ${idx + 1}`;
 
         lines.forEach(line => {
-          // 줄 시작 부분에 ID가 병합되어 붙어있는 케이스 정리 (ex. ego_014-sess-abc나: 밥먹었어?)
           const idMatch = line.match(/^(ego_\d+-sess-[a-z0-9]+)/i);
           if (idMatch) {
             topic = idMatch[1];
@@ -256,12 +299,10 @@
 
           if (!line) return;
 
-          // 화자와 텍스트 분리 (ex. 충주클럽 영호아재🚚: 수영 코치님...)
           const match = line.match(/^(.+?):\s*(.*)$/);
           if (match) {
             messages.push({ speaker: match[1].trim(), text: match[2].trim() });
           } else if (messages.length > 0) {
-            // 화자 표시가 없는 줄은 이전 메시지에 이어 붙임
             messages[messages.length - 1].text += '\n' + line;
           }
         });
@@ -293,14 +334,10 @@
       const conversation = state.conversations[state.index];
       el.topic.textContent = conversation.topic;
       el.chatBody.innerHTML = conversation.messages.map(msg => renderMessage(msg)).join("");
-      
-      // 렌더링 시 항상 스크롤을 맨 위로 초기화
       el.chatBody.scrollTop = 0;
     }
 
-    // 개별 메시지 렌더링 HTML (기존 label.js 로직)
     function renderMessage(message) {
-      // '나'일 경우 오른쪽(me)으로 정렬
       const isMine = message.speaker === "나";
       const speaker = escapeHtml(message.speaker);
       const text = escapeHtml(message.text);
@@ -328,7 +365,6 @@
       `;
     }
 
-    // 이전/다음 이동 네비게이션
     function navigate(direction) {
       const total = state.conversations.length;
       if (total === 0) return;
@@ -340,7 +376,6 @@
       }
     }
 
-    // 특정 인덱스로 직접 이동
     function goToIndex(targetIndex) {
       const total = state.conversations.length;
       if (total === 0 || isNaN(targetIndex)) {
@@ -356,7 +391,6 @@
       }
     }
 
-    // ===== 제공된 유틸리티 함수 모음 (아바타, 해시, 이스케이프) =====
     function renderAvatar(speaker) {
       const meta = avatarMetaForSpeaker(speaker);
       return `
@@ -389,7 +423,6 @@
     function speakerInitials(speaker) {
       const normalized = String(speaker).trim();
       if (!normalized) return "?";
-      // 이모지 등 고려하여 Array.from 사용
       return Array.from(normalized.replace(/\s+/g, "")).slice(0, 2).join("");
     }
 
@@ -410,7 +443,6 @@
         .replaceAll("'", "&#039;");
     }
 
-    // 앱 실행
     document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
