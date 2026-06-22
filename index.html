@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zeroquery Text Chat Viewer</title>
+  <style>
+    /* =========================================
+       제공된 label.css 스타일 (전체 포함)
+       ========================================= */
+    :root {
+      --bg: #eef1f5; --panel: #ffffff; --ink: #15171a; --muted: #6f7782;
+      --line: #d9dee7; --accent: #2f6fed; --accent-soft: #e9f0ff;
+      --danger: #bf3d3d; --good: #23835f; --chat-bg: #b8d2ec;
+      --kakao: #fee500; --shadow-soft: 0 1px 2px rgba(20, 26, 36, .04);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0; min-width: 0; overflow: hidden; background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    .workspace { height: 100svh; display: grid; grid-template-rows: auto 1fr; gap: 12px; padding: 16px; font-size: 14px; line-height: 1.4; }
+    .label-workspace { width: 100%; max-width: 1840px; margin-inline: auto; padding: clamp(14px, 1.2vw, 20px); }
+    .topbar { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
+    .topbar h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
+    .topbar p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .app-header { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(0, auto); align-items: start; column-gap: 16px; min-height: 46px; padding-bottom: 2px; }
+    .app-title-block { min-width: 0; }
+    .label-grid { min-height: 0; display: grid; grid-template-columns: minmax(560px, 1fr) clamp(520px, 38vw, 640px); grid-template-areas: "chat label"; gap: 16px; align-items: stretch; }
+    
+    /* Chat Panel Styles */
+    .chat-panel { grid-area: chat; min-height: 0; display: grid; grid-template-rows: auto 1fr; border: 1px solid #9eb9d4; border-radius: 8px; overflow: hidden; background: var(--chat-bg); }
+    .chat-header { min-height: 56px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255, 255, 255, .45); border-bottom: 1px solid rgba(0, 0, 0, .08); }
+    .chat-header > div:first-child { flex: 1 1 auto; min-width: 0; }
+    .eyebrow { display: block; color: #546475; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .chat-header h2 { margin: 2px 0 0; font-size: 17px; line-height: 1.25; max-width: 100%; }
+    .chat-header-tools { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+    .chat-nav-pair { display: inline-flex; align-items: center; gap: 6px; }
+    .nav-button { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: #424852; font-size: 26px; line-height: 1; cursor: pointer; }
+    .conversation-index-control { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 999px; min-height: 34px; padding: 3px 8px; background: rgba(255, 255, 255, .7); color: var(--muted); font-size: 12px; font-weight: 800; }
+    .conversation-index-input { width: 34px; height: 24px; border: 0; border-radius: 6px; padding: 0 3px; background: transparent; color: #1f6fea; font: inherit; text-align: center; }
+    .conversation-index-input:focus { outline: 2px solid rgba(31, 111, 234, .38); outline-offset: 0; background: rgba(255, 255, 255, .9); }
+    .conversation-index-input:disabled { color: var(--muted); cursor: default; }
+    .chat-body { min-height: 0; overflow-y: auto; padding: 16px; }
+    .empty-state { height: 100%; display: flex; align-items: center; justify-content: center; color: #4b5968; font-size: 14px; }
+    
+    /* Message Row Styles */
+    .message-row { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; }
+    .message-row.me { justify-content: flex-end; }
+    .speaker-avatar { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 50%; border: 2px solid var(--avatar-ring); background: var(--avatar-bg); color: var(--avatar-ink); font-size: 12px; font-weight: 800; letter-spacing: 0; box-shadow: 0 1px 1px rgba(0, 0, 0, .12); }
+    .message-stack { max-width: min(68%, 620px); }
+    .speaker { margin-bottom: 4px; color: #334354; font-size: 12px; }
+    .me-speaker { text-align: right; }
+    .bubble { padding: 9px 11px; border-radius: 6px; background: #fff; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+    .me .bubble { background: var(--kakao); }
+
+    /* Right Panel (Input Panel) Styles */
+    .label-panel { grid-area: label; min-height: 0; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: var(--shadow-soft); }
+    .label-panel-header { min-height: 0; display: grid; padding: 10px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
+    .label-panel-body { min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; padding: 10px; }
+    .action-section { display: grid; grid-template-columns: 1fr; gap: 8px; border-top: 1px solid var(--line); background: #fff; padding: 10px; }
+    .panel-section { min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 10px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
+    .primary-workflow-section { flex: 1; border: 0; border-bottom: 1px solid #edf0f5; border-radius: 0; background: transparent; box-shadow: none; padding: 12px 10px; }
+    .section-title { margin-bottom: 9px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .admin-textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 10px 12px; color: var(--ink); font: inherit; }
+    .primary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; width: 100%; }
+    .primary-action:hover { opacity: 0.9; }
+
+    /* Responsive */
+    @media (max-width: 1180px) {
+      .label-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chat" "label"; }
+      .workspace { height: auto; overflow: visible; }
+      .label-panel { height: 500px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace label-workspace">
+    <header class="topbar app-header">
+      <div class="app-title-block">
+        <h1>Zeroquery Text Chat Viewer</h1>
+        <p>DB/서버 연결 없이 구글 시트 텍스트를 대화방 포맷으로 파싱합니다.</p>
+      </div>
+    </header>
+
+    <section class="label-grid">
+      <article class="chat-panel">
+        <div class="chat-header">
+          <div>
+            <span class="eyebrow">Conversation</span>
+            <h2 id="conversationTopic">대화를 불러오세요</h2>
+          </div>
+          <div class="chat-header-tools">
+            <div class="chat-nav-pair" aria-label="대화 이동">
+              <button class="nav-button" id="prevButton" type="button" aria-label="이전 대화">‹</button>
+              <button class="nav-button" id="nextButton" type="button" aria-label="다음 대화">›</button>
+            </div>
+            <span class="conversation-index-control" aria-label="대화 번호 이동">
+              <input
+                id="conversationIndexInput"
+                class="conversation-index-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                aria-label="대화 번호"
+                value="0"
+                disabled
+              >
+              <span class="conversation-index-separator">/</span>
+              <span id="conversationIndexTotal" class="conversation-index-total">0</span>
+            </span>
+          </div>
+        </div>
+        <div id="chatBody" class="chat-body">
+          <div class="empty-state">우측 입력창에 텍스트를 넣고 파싱 버튼을 눌러주세요.</div>
+        </div>
+      </article>
+
+      <aside class="label-panel">
+        <div class="label-panel-header">
+          <div class="section-title" style="margin-bottom: 0;">원시 데이터 (Raw Data) 입력</div>
+        </div>
+        <div class="label-panel-body">
+          <section class="panel-section primary-workflow-section">
+            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px;">구글 시트에서 여러 개의 대화 단위(행/열)를 복사해서 붙여넣으세요. 형식에 맞춰 자동으로 분할됩니다.</p>
+            <textarea
+              id="rawTextInput"
+              class="admin-textarea"
+              style="flex: 1; min-height: 300px; resize: none;"
+              placeholder="예:&#10;ego_014-sess-5e2282ee0469나: 아빠 근무 끝났어?&#10;우리 아빠: 좀 전에 끝났다.&#10;..."
+            ></textarea>
+          </section>
+        </div>
+        <footer class="label-panel-footer action-section">
+          <button id="parseButton" class="primary-action" type="button">파싱하여 뷰어에 띄우기</button>
+        </footer>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    // 상태 관리
+    const state = {
+      conversations: [],
+      index: 0
+    };
+
+    // DOM 요소 캐싱
+    const el = {
+      chatBody: document.getElementById("chatBody"),
+      topic: document.getElementById("conversationTopic"),
+      indexInput: document.getElementById("conversationIndexInput"),
+      indexTotal: document.getElementById("conversationIndexTotal"),
+      prevButton: document.getElementById("prevButton"),
+      nextButton: document.getElementById("nextButton"),
+      rawTextInput: document.getElementById("rawTextInput"),
+      parseButton: document.getElementById("parseButton")
+    };
+
+    // 초기화
+    function init() {
+      el.parseButton.addEventListener("click", handleParse);
+      el.prevButton.addEventListener("click", () => navigate(-1));
+      el.nextButton.addEventListener("click", () => navigate(1));
+      
+      el.indexInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const target = parseInt(e.target.value, 10) - 1;
+          goToIndex(target);
+        }
+      });
+      el.indexInput.addEventListener("blur", (e) => {
+        const target = parseInt(e.target.value, 10) - 1;
+        goToIndex(target);
+      });
+    }
+
+    // 파싱 실행
+    function handleParse() {
+      const rawText = el.rawTextInput.value;
+      if (!rawText.trim()) {
+        alert("파싱할 텍스트를 입력해주세요.");
+        return;
+      }
+      state.conversations = parseRawText(rawText);
+      state.index = 0;
+      renderConversation();
+    }
+
+    // 정교한 텍스트 파서
+    function parseRawText(rawText) {
+      // 1. 구글시트 복사 시 딸려오는 헤더(conversation_id dialog_text 등) 제거
+      let text = rawText.replace(/conversation_id\s*dialog_text/gi, '').trim();
+      let blocks = [];
+
+      // 2. 구글시트에서 여러 셀 복사 시, 줄바꿈이 있는 셀은 큰따옴표(")로 묶이는 패턴 처리
+      if (text.includes('"')) {
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === '\n' && !inQuotes) {
+            if (current.trim()) blocks.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        if (current.trim()) blocks.push(current.trim());
+      }
+
+      // 3. 따옴표가 없거나 하나로 묶인 경우, ego_... 형태의 ID를 기준으로 강제 분할
+      if (blocks.length <= 1) {
+        const idRegex = /(ego_\d+-sess-[a-z0-9]+)/gi;
+        if (idRegex.test(text)) {
+          const parts = text.split(idRegex);
+          blocks = [];
+          let temp = "";
+          for (let i = 0; i < parts.length; i++) {
+            if (idRegex.test(parts[i])) {
+              if (temp.trim()) blocks.push(temp.trim());
+              temp = parts[i]; // ID를 새 블록의 시작으로 편입
+            } else {
+              temp += parts[i];
+            }
+          }
+          if (temp.trim()) blocks.push(temp.trim());
+        }
+      }
+
+      // 4. 그래도 분할이 안 된 평범한 텍스트라면 더블 엔터나 구분선(---)으로 분할
+      if (blocks.length <= 1) {
+        blocks = text.split(/(?:\n\s*\n|---)/).filter(b => b.trim());
+      }
+
+      // 5. 각 블록을 대화 메시지로 파싱 (Speaker: Text 구조)
+      const parsedConversations = [];
+      
+      blocks.forEach((block, idx) => {
+        const lines = block.split('\n').filter(l => l.trim());
+        const messages = [];
+        let topic = `대화방 ${idx + 1}`;
+
+        lines.forEach(line => {
+          // 줄 시작 부분에 ID가 병합되어 붙어있는 케이스 정리 (ex. ego_014-sess-abc나: 밥먹었어?)
+          const idMatch = line.match(/^(ego_\d+-sess-[a-z0-9]+)/i);
+          if (idMatch) {
+            topic = idMatch[1];
+            line = line.substring(idMatch[1].length).trim();
+          }
+
+          if (!line) return;
+
+          // 화자와 텍스트 분리 (ex. 충주클럽 영호아재🚚: 수영 코치님...)
+          const match = line.match(/^(.+?):\s*(.*)$/);
+          if (match) {
+            messages.push({ speaker: match[1].trim(), text: match[2].trim() });
+          } else if (messages.length > 0) {
+            // 화자 표시가 없는 줄은 이전 메시지에 이어 붙임
+            messages[messages.length - 1].text += '\n' + line;
+          }
+        });
+
+        if (messages.length > 0) {
+          parsedConversations.push({ topic, messages });
+        }
+      });
+
+      return parsedConversations;
+    }
+
+    // 뷰어 렌더링
+    function renderConversation() {
+      const total = state.conversations.length;
+      el.indexTotal.textContent = String(total);
+      
+      if (total === 0) {
+        el.topic.textContent = "대화를 불러오세요";
+        el.indexInput.value = "0";
+        el.indexInput.disabled = true;
+        el.chatBody.innerHTML = '<div class="empty-state">파싱된 대화가 없습니다. 텍스트 포맷을 확인해주세요.</div>';
+        return;
+      }
+
+      el.indexInput.disabled = false;
+      el.indexInput.value = String(state.index + 1);
+
+      const conversation = state.conversations[state.index];
+      el.topic.textContent = conversation.topic;
+      el.chatBody.innerHTML = conversation.messages.map(msg => renderMessage(msg)).join("");
+      
+      // 렌더링 시 항상 스크롤을 맨 위로 초기화
+      el.chatBody.scrollTop = 0;
+    }
+
+    // 개별 메시지 렌더링 HTML (기존 label.js 로직)
+    function renderMessage(message) {
+      // '나'일 경우 오른쪽(me)으로 정렬
+      const isMine = message.speaker === "나";
+      const speaker = escapeHtml(message.speaker);
+      const text = escapeHtml(message.text);
+      const avatar = renderAvatar(message.speaker);
+
+      if (isMine) {
+        return `
+          <div class="message-row me">
+            <div class="message-stack">
+              <div class="speaker me-speaker">${speaker}</div>
+              <div class="bubble">${text}</div>
+            </div>
+            ${avatar}
+          </div>
+        `;
+      }
+      return `
+        <div class="message-row">
+          ${avatar}
+          <div class="message-stack">
+            <div class="speaker">${speaker}</div>
+            <div class="bubble">${text}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 이전/다음 이동 네비게이션
+    function navigate(direction) {
+      const total = state.conversations.length;
+      if (total === 0) return;
+      let newIndex = state.index + direction;
+      
+      if (newIndex >= 0 && newIndex < total) {
+        state.index = newIndex;
+        renderConversation();
+      }
+    }
+
+    // 특정 인덱스로 직접 이동
+    function goToIndex(targetIndex) {
+      const total = state.conversations.length;
+      if (total === 0 || isNaN(targetIndex)) {
+        el.indexInput.value = total > 0 ? state.index + 1 : 0;
+        return;
+      }
+      targetIndex = Math.max(0, Math.min(targetIndex, total - 1));
+      if (targetIndex !== state.index) {
+        state.index = targetIndex;
+        renderConversation();
+      } else {
+        el.indexInput.value = targetIndex + 1;
+      }
+    }
+
+    // ===== 제공된 유틸리티 함수 모음 (아바타, 해시, 이스케이프) =====
+    function renderAvatar(speaker) {
+      const meta = avatarMetaForSpeaker(speaker);
+      return `
+        <div
+          class="speaker-avatar"
+          title="${escapeHtml(speaker)}"
+          style="--avatar-bg:${meta.bg};--avatar-ink:${meta.ink};--avatar-ring:${meta.ring};"
+        >${escapeHtml(meta.initials)}</div>
+      `;
+    }
+
+    function avatarMetaForSpeaker(speaker) {
+      const palette = [
+        ["#4e79a7", "#ffffff", "#315f88"],
+        ["#f28e2b", "#1f1408", "#c56d16"],
+        ["#59a14f", "#ffffff", "#377d35"],
+        ["#e15759", "#ffffff", "#ba3a3d"],
+        ["#b07aa1", "#ffffff", "#8f5c80"],
+        ["#76b7b2", "#092624", "#4f9692"],
+        ["#edc948", "#2c2300", "#c3a126"],
+        ["#9c755f", "#ffffff", "#7b5845"],
+        ["#5d6b99", "#ffffff", "#424d73"],
+      ];
+      const key = speaker || "?";
+      const idx = hashString(key) % palette.length;
+      const [bg, ink, ring] = palette[idx];
+      return { bg, ink, ring, initials: speakerInitials(key) };
+    }
+
+    function speakerInitials(speaker) {
+      const normalized = String(speaker).trim();
+      if (!normalized) return "?";
+      // 이모지 등 고려하여 Array.from 사용
+      return Array.from(normalized.replace(/\s+/g, "")).slice(0, 2).join("");
+    }
+
+    function hashString(value) {
+      let hash = 0;
+      for (const char of Array.from(String(value))) {
+        hash = (hash * 31 + char.codePointAt(0)) >>> 0;
+      }
+      return hash;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // 앱 실행
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
