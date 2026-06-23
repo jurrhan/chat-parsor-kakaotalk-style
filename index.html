@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zeroquery Text Chat Viewer (Responsive)</title>
+  <title>Zeroquery Text Chat Viewer (Responsive & Speaker Select)</title>
   <style>
     /* =========================================
        디자인 시스템 시스템 스타일 & 반응형 패치
@@ -46,6 +46,11 @@
     .chat-header-tools { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
     .chat-nav-pair { display: inline-flex; align-items: center; gap: 6px; }
     .nav-button { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: #424852; font-size: 26px; line-height: 1; cursor: pointer; }
+    
+    /* 보기 기준 추가 커스텀 CSS */
+    .viewer-control { display: grid; gap: 3px; color: #546475; font-size: 11px; font-weight: 800; }
+    .viewer-control select { height: 34px; max-width: 150px; border: 1px solid var(--line); border-radius: 999px; padding: 0 26px 0 10px; background: rgba(255, 255, 255, .78); color: #28313d; font-size: 12px; cursor: pointer; }
+    
     .conversation-index-control { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 999px; min-height: 34px; padding: 3px 8px; background: rgba(255, 255, 255, .7); color: var(--muted); font-size: 12px; font-weight: 800; }
     .conversation-index-input { width: 34px; height: 24px; border: 0; border-radius: 6px; padding: 0 3px; background: transparent; color: #1f6fea; font: inherit; text-align: center; }
     .conversation-index-input:focus { outline: 2px solid rgba(31, 111, 234, .38); outline-offset: 0; background: rgba(255, 255, 255, .9); }
@@ -75,47 +80,24 @@
     .primary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; width: 100%; }
     .primary-action:hover { opacity: 0.9; }
 
-    /* =========================================
-       반응형 미디어 쿼리 패치 (화면이 작아질 때 스크롤 활성화)
-       ========================================= */
+    /* 반응형 패치 */
     @media (max-width: 1180px) {
-      body {
-        overflow: auto; /* 창이 작아질 때 전체 브라우저 화면 스크롤 허용 */
-      }
-      .workspace {
-        height: auto;
-        min-height: 100svh;
-        overflow: visible;
-        padding: 12px;
-      }
-      .label-grid {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: 
-          "chat"
-          "label";
-        gap: 12px;
-      }
-      .chat-panel {
-        height: 65vh; /* 모바일/태블릿 환경에서 대화창 영역 높이 제한하여 내부 메시지 스크롤 유지 */
-        min-height: 80vh;
-      }
-      .label-panel {
-        height: auto;
-        min-height: 350px;
-        overflow: visible;
-      }
-      .label-panel-body {
-        overflow: visible;
-      }
-      .admin-textarea {
-        min-height: 200px;
-      }
+      body { overflow: auto; }
+      .workspace { height: auto; min-height: 100svh; overflow: visible; padding: 12px; }
+      .label-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "chat" "label"; gap: 12px; }
+      .chat-panel { height: 65vh; min-height: 450px; }
+      .label-panel { height: auto; min-height: 350px; overflow: visible; }
+      .label-panel-body { overflow: visible; }
+      .admin-textarea { min-height: 200px; }
+    }
+
+    @media (max-width: 768px) {
+      .chat-header { min-height: auto; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .chat-header-tools { width: 100%; justify-content: space-between; flex-wrap: wrap; }
     }
 
     @media (max-width: 600px) {
       .topbar h1 { font-size: 18px; }
-      .chat-header { padding: 8px 12px; min-height: auto; flex-direction: column; align-items: flex-start; gap: 8px; }
-      .chat-header-tools { width: 100%; justify-content: space-between; }
       .message-stack { max-width: 85%; }
     }
   </style>
@@ -125,7 +107,7 @@
     <header class="topbar app-header">
       <div class="app-title-block">
         <h1>Zeroquery Text Chat Viewer</h1>
-        <p>DB/서버 연결 없이 구글 시트 텍스트를 대화방 포맷으로 파싱합니다. (반응형 지원)</p>
+        <p>DB/서버 연결 없이 구글 시트 텍스트를 대화방 포맷으로 파싱합니다. (기준 발화자 선택 지원)</p>
       </div>
     </header>
 
@@ -141,6 +123,12 @@
               <button class="nav-button" id="prevButton" type="button" aria-label="이전 대화">‹</button>
               <button class="nav-button" id="nextButton" type="button" aria-label="다음 대화">›</button>
             </div>
+            <label class="viewer-control">
+              <span>보기 기준</span>
+              <select id="viewerSpeaker">
+                <option value="">단톡방</option>
+              </select>
+            </label>
             <span class="conversation-index-control" aria-label="대화 번호 이동">
               <input
                 id="conversationIndexInput"
@@ -173,7 +161,7 @@
               id="rawTextInput"
               class="admin-textarea"
               style="flex: 1; min-height: 250px; resize: vertical;"
-              placeholder="예시:나: 아빠 근무 끝났어?&#10;우리 아빠: 좀 전에 끝났다.&#10;나: 올 때 메로나 사다줭"
+              placeholder="예:&#10;ego_014-sess-5e2282ee0469나: 아빠 근무 끝났어?&#10;우리 아빠: 좀 전에 끝났다.&#10;..."
             ></textarea>
           </section>
         </div>
@@ -188,7 +176,8 @@
     // 상태 관리
     const state = {
       conversations: [],
-      index: 0
+      index: 0,
+      viewerSpeaker: null // 기준 발화자
     };
 
     // DOM 요소 캐싱
@@ -200,7 +189,8 @@
       prevButton: document.getElementById("prevButton"),
       nextButton: document.getElementById("nextButton"),
       rawTextInput: document.getElementById("rawTextInput"),
-      parseButton: document.getElementById("parseButton")
+      parseButton: document.getElementById("parseButton"),
+      viewerSpeaker: document.getElementById("viewerSpeaker")
     };
 
     // 초기화
@@ -209,6 +199,12 @@
       el.prevButton.addEventListener("click", () => navigate(-1));
       el.nextButton.addEventListener("click", () => navigate(1));
       
+      // 보기 기준 변경 이벤트 바인딩
+      el.viewerSpeaker.addEventListener("change", () => {
+        state.viewerSpeaker = el.viewerSpeaker.value || null;
+        renderChatMessages();
+      });
+
       el.indexInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -231,16 +227,15 @@
       }
       state.conversations = parseRawText(rawText);
       state.index = 0;
+      state.viewerSpeaker = null; // 새 데이터 파싱 시 기준 초기화
       renderConversation();
     }
 
     // 정교한 텍스트 파서
     function parseRawText(rawText) {
-      // 1. 구글시트 복사 시 딸려오는 헤더 제거
       let text = rawText.replace(/conversation_id\s*dialog_text/gi, '').trim();
       let blocks = [];
 
-      // 2. 구글시트에서 여러 셀 복사 시, 줄바꿈이 있는 셀은 큰따옴표(")로 묶이는 패턴 처리
       if (text.includes('"')) {
         let current = "";
         let inQuotes = false;
@@ -258,7 +253,6 @@
         if (current.trim()) blocks.push(current.trim());
       }
 
-      // 3. 따옴표가 없거나 하나로 묶인 경우, ego_... 형태의 ID를 기준으로 강제 분할
       if (blocks.length <= 1) {
         const idRegex = /(ego_\d+-sess-[a-z0-9]+)/gi;
         if (idRegex.test(text)) {
@@ -277,12 +271,10 @@
         }
       }
 
-      // 4. 그래도 분할이 안 된 경우 구분선(---) 분할
       if (blocks.length <= 1) {
         blocks = text.split(/(?:\n\s*\n|---)/).filter(b => b.trim());
       }
 
-      // 5. 각 블록을 대화 메시지로 파싱
       const parsedConversations = [];
       
       blocks.forEach((block, idx) => {
@@ -315,7 +307,7 @@
       return parsedConversations;
     }
 
-    // 뷰어 렌더링
+    // 대화방 메인 렌더러
     function renderConversation() {
       const total = state.conversations.length;
       el.indexTotal.textContent = String(total);
@@ -325,6 +317,7 @@
         el.indexInput.value = "0";
         el.indexInput.disabled = true;
         el.chatBody.innerHTML = '<div class="empty-state">파싱된 대화가 없습니다. 텍스트 포맷을 확인해주세요.</div>';
+        el.viewerSpeaker.innerHTML = '<option value="">단톡방</option>';
         return;
       }
 
@@ -333,17 +326,63 @@
 
       const conversation = state.conversations[state.index];
       el.topic.textContent = conversation.topic;
-      el.chatBody.innerHTML = conversation.messages.map(msg => renderMessage(msg)).join("");
+      
+      // 보기 기준(Select 옵션) 렌더링 함수 호출
+      renderViewerOptions(conversation);
+      
+      // 메시지 목록 렌더링
+      renderChatMessages();
+    }
+
+    // 대화 참여자 기반 보기 기준 옵션 설정 (기존 label.js 포맷 반영)
+    function renderViewerOptions(conversation) {
+      const speakers = [];
+      conversation.messages.forEach(msg => {
+        if (msg.speaker && !speakers.includes(msg.speaker)) {
+          speakers.push(msg.speaker);
+        }
+      });
+
+      // 기존 선택값 유지 보정
+      const previous = state.viewerSpeaker;
+      state.viewerSpeaker = speakers.includes(previous) ? previous : null;
+
+      el.viewerSpeaker.innerHTML = [
+        '<option value="">단톡방</option>',
+        ...speakers.map(speaker => (
+          `<option value="${escapeHtml(speaker)}">${escapeHtml(speaker)} 기준</option>`
+        )),
+      ].join("");
+      
+      el.viewerSpeaker.value = state.viewerSpeaker || "";
+    }
+
+    // 채팅 메시지 목록 출력
+    function renderChatMessages() {
+      const conversation = state.conversations[state.index];
+      if (!conversation) return;
+
+      // 기준 발화자 사이드 배정 로직 (지정자 혹은 '나'가 있으면 right, 그 외 left)
+      const targetSpeaker = state.viewerSpeaker || "나";
+      
+      el.chatBody.innerHTML = conversation.messages
+        .map(message => {
+          const isMine = message.speaker === targetSpeaker;
+          return renderMessage(message, isMine ? "right" : "left");
+        })
+        .join("");
+        
       el.chatBody.scrollTop = 0;
     }
 
-    function renderMessage(message) {
-      const isMine = message.speaker === "나";
+    // 개별 메시지 렌더링 HTML (기존 label.js 구조)
+    function renderMessage(message, side) {
+      const mine = side === "right";
       const speaker = escapeHtml(message.speaker);
       const text = escapeHtml(message.text);
       const avatar = renderAvatar(message.speaker);
 
-      if (isMine) {
+      if (mine) {
         return `
           <div class="message-row me">
             <div class="message-stack">
@@ -365,6 +404,7 @@
       `;
     }
 
+    // 내비게이션 및 이동
     function navigate(direction) {
       const total = state.conversations.length;
       if (total === 0) return;
@@ -391,6 +431,7 @@
       }
     }
 
+    // 아바타 & 이스케이프 유틸리티
     function renderAvatar(speaker) {
       const meta = avatarMetaForSpeaker(speaker);
       return `
