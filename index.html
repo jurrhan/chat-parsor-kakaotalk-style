@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zeroquery Text Chat Viewer (Responsive & Speaker Select)</title>
+  <title>Zeroquery Text Chat Viewer (Advanced Parsing)</title>
   <style>
     /* =========================================
-       디자인 시스템 시스템 스타일 & 반응형 패치
+       디자인 시스템 스타일 & 반응형 & 보기기준 패치
        ========================================= */
     :root {
       --bg: #eef1f5; --panel: #ffffff; --ink: #15171a; --muted: #6f7782;
@@ -37,7 +37,6 @@
     
     .label-grid { min-height: 0; display: grid; grid-template-columns: minmax(560px, 1fr) clamp(520px, 38vw, 640px); grid-template-areas: "chat label"; gap: 16px; align-items: stretch; }
     
-    /* Chat Panel Styles */
     .chat-panel { grid-area: chat; min-height: 0; display: grid; grid-template-rows: auto 1fr; border: 1px solid #9eb9d4; border-radius: 8px; overflow: hidden; background: var(--chat-bg); }
     .chat-header { min-height: 56px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255, 255, 255, .45); border-bottom: 1px solid rgba(0, 0, 0, .08); }
     .chat-header > div:first-child { flex: 1 1 auto; min-width: 0; }
@@ -47,7 +46,6 @@
     .chat-nav-pair { display: inline-flex; align-items: center; gap: 6px; }
     .nav-button { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: #424852; font-size: 26px; line-height: 1; cursor: pointer; }
     
-    /* 보기 기준 추가 커스텀 CSS */
     .viewer-control { display: grid; gap: 3px; color: #546475; font-size: 11px; font-weight: 800; }
     .viewer-control select { height: 34px; max-width: 150px; border: 1px solid var(--line); border-radius: 999px; padding: 0 26px 0 10px; background: rgba(255, 255, 255, .78); color: #28313d; font-size: 12px; cursor: pointer; }
     
@@ -58,7 +56,6 @@
     .chat-body { min-height: 0; overflow-y: auto; padding: 16px; }
     .empty-state { height: 100%; display: flex; align-items: center; justify-content: center; color: #4b5968; font-size: 14px; }
     
-    /* Message Row Styles */
     .message-row { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; }
     .message-row.me { justify-content: flex-end; }
     .speaker-avatar { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 50%; border: 2px solid var(--avatar-ring); background: var(--avatar-bg); color: var(--avatar-ink); font-size: 12px; font-weight: 800; letter-spacing: 0; box-shadow: 0 1px 1px rgba(0, 0, 0, .12); }
@@ -68,7 +65,6 @@
     .bubble { padding: 9px 11px; border-radius: 6px; background: #fff; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
     .me .bubble { background: var(--kakao); }
 
-    /* Right Panel (Input Panel) Styles */
     .label-panel { grid-area: label; min-height: 0; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: var(--shadow-soft); }
     .label-panel-header { min-height: 0; display: grid; padding: 10px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
     .label-panel-body { min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; padding: 10px; }
@@ -80,7 +76,6 @@
     .primary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; width: 100%; }
     .primary-action:hover { opacity: 0.9; }
 
-    /* 반응형 패치 */
     @media (max-width: 1180px) {
       body { overflow: auto; }
       .workspace { height: auto; min-height: 100svh; overflow: visible; padding: 12px; }
@@ -107,7 +102,7 @@
     <header class="topbar app-header">
       <div class="app-title-block">
         <h1>Zeroquery Text Chat Viewer</h1>
-        <p>DB/서버 연결 없이 구글 시트 텍스트를 대화방 포맷으로 파싱합니다. (기준 발화자 선택 지원)</p>
+        <p>DB/서버 없이 큰따옴표("") 및 10단위 이상의 번호 흐름을 완벽하게 파싱합니다.</p>
       </div>
     </header>
 
@@ -156,12 +151,12 @@
         </div>
         <div class="label-panel-body">
           <section class="panel-section primary-workflow-section">
-            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px;">구글 시트에서 여러 개의 대화 단위(행/열)를 복사해서 붙여넣으세요. 형식에 맞춰 자동으로 분할됩니다.</p>
+            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px;">큰따옴표("")로 묶인 블록은 내부 번호와 무관하게 1개의 방으로 유지되며, 10 이상의 번호도 쪼개짐 없이 안전하게 처리됩니다.</p>
             <textarea
               id="rawTextInput"
               class="admin-textarea"
               style="flex: 1; min-height: 250px; resize: vertical;"
-              placeholder="예:&#10;ego_014-sess-5e2282ee0469나: 아빠 근무 끝났어?&#10;우리 아빠: 좀 전에 끝났다.&#10;..."
+              placeholder="여기에 텍스트를 붙여넣어주세요..."
             ></textarea>
           </section>
         </div>
@@ -173,14 +168,12 @@
   </main>
 
   <script>
-    // 상태 관리
     const state = {
       conversations: [],
       index: 0,
-      viewerSpeaker: null // 기준 발화자
+      viewerSpeaker: null
     };
 
-    // DOM 요소 캐싱
     const el = {
       chatBody: document.getElementById("chatBody"),
       topic: document.getElementById("conversationTopic"),
@@ -193,13 +186,11 @@
       viewerSpeaker: document.getElementById("viewerSpeaker")
     };
 
-    // 초기화
     function init() {
       el.parseButton.addEventListener("click", handleParse);
       el.prevButton.addEventListener("click", () => navigate(-1));
       el.nextButton.addEventListener("click", () => navigate(1));
       
-      // 보기 기준 변경 이벤트 바인딩
       el.viewerSpeaker.addEventListener("change", () => {
         state.viewerSpeaker = el.viewerSpeaker.value || null;
         renderChatMessages();
@@ -218,7 +209,6 @@
       });
     }
 
-    // 파싱 실행
     function handleParse() {
       const rawText = el.rawTextInput.value;
       if (!rawText.trim()) {
@@ -227,87 +217,133 @@
       }
       state.conversations = parseRawText(rawText);
       state.index = 0;
-      state.viewerSpeaker = null; // 새 데이터 파싱 시 기준 초기화
+      state.viewerSpeaker = null;
       renderConversation();
     }
 
-    // 정교한 텍스트 파서
+    // ==========================================
+    // 두 자릿수 이상 번호 분열 방지 및 따옴표 기반 파서
+    // ==========================================
     function parseRawText(rawText) {
       let text = rawText.replace(/conversation_id\s*dialog_text/gi, '').trim();
-      let blocks = [];
 
-      if (text.includes('"')) {
-        let current = "";
-        let inQuotes = false;
-        for (let i = 0; i < text.length; i++) {
-          const char = text[i];
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === '\n' && !inQuotes) {
-            if (current.trim()) blocks.push(current.trim());
-            current = "";
+      // 1. 구글 시트 복사 시 여러 셀을 감싸는 CSV 스타일 큰따옴표 정밀 처리
+      let normalizedText = "";
+      let inQuotes = false;
+      let currentCell = "";
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') {
+          if (inQuotes && text[i+1] === '"') {
+            currentCell += '"'; // 연속된 따옴표("")는 하나의 따옴표(")로 치환
+            i++; 
           } else {
-            current += char;
+            inQuotes = !inQuotes;
           }
+        } else if (char === '\n' && !inQuotes) {
+          if (currentCell.trim()) {
+            normalizedText += currentCell.trim() + '\n|||NEW_ROOM|||\n';
+          }
+          currentCell = "";
+        } else {
+          currentCell += char;
         }
-        if (current.trim()) blocks.push(current.trim());
+      }
+      if (currentCell.trim()) {
+        normalizedText += currentCell.trim();
+      }
+      text = normalizedText;
+
+      // 2. 글자가 찰싹 붙어있는 경우 강제 분리 (Unglue)
+      // FIX: [^\d\s\n] 를 사용하여, 앞에 붙은 글자가 '숫자'가 아닐 때만 떼어내도록 변경 (11 -> 1 쪼개짐 방지)
+      text = text.replace(/([^\d\s\n])(\d+\.\s*[^:\n]+:)/g, '$1\n$2');
+      text = text.replace(/([^\s\n])(ego_\d+-sess-[a-z0-9]+)/gi, '$1\n$2');
+
+      const lines = text.split('\n');
+      const parsedConversations = [];
+      let currentMessages = [];
+      let currentTopic = '';
+      let convCounter = 1;
+      let lastNum = 0;
+
+      // 대화방을 저장하고 초기화하는 헬퍼 함수
+      function saveCurrent() {
+        if (currentMessages.length > 0) {
+          parsedConversations.push({
+            topic: currentTopic || `대화방 ${convCounter}`,
+            messages: [...currentMessages]
+          });
+          currentMessages = [];
+          currentTopic = '';
+          convCounter++;
+          lastNum = 0;
+        }
       }
 
-      if (blocks.length <= 1) {
-        const idRegex = /(ego_\d+-sess-[a-z0-9]+)/gi;
-        if (idRegex.test(text)) {
-          const parts = text.split(idRegex);
-          blocks = [];
-          let temp = "";
-          for (let i = 0; i < parts.length; i++) {
-            if (idRegex.test(parts[i])) {
-              if (temp.trim()) blocks.push(temp.trim());
-              temp = parts[i];
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        // 명시적 구분선이나 셀 경계는 무조건 분리
+        if (trimmed === '---' || trimmed === '|||NEW_ROOM|||') {
+          saveCurrent();
+          return;
+        }
+
+        // ego_ ID 포맷 처리
+        const egoMatch = trimmed.match(/^(ego_\d+-sess-[a-z0-9]+)/i);
+        if (egoMatch) {
+          saveCurrent();
+          currentTopic = egoMatch[1];
+          const remainder = trimmed.substring(egoMatch[1].length).trim();
+          if (remainder) {
+            const numMatch = remainder.match(/^(\d+)\.\s*([^:]+):\s*(.*)$/);
+            if (numMatch) {
+              lastNum = parseInt(numMatch[1], 10);
+              currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
             } else {
-              temp += parts[i];
+              const stdMatch = remainder.match(/^([^:]+):\s*(.*)$/);
+              if (stdMatch && !remainder.startsWith('http')) {
+                currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
+              }
             }
           }
-          if (temp.trim()) blocks.push(temp.trim());
+          return;
         }
-      }
 
-      if (blocks.length <= 1) {
-        blocks = text.split(/(?:\n\s*\n|---)/).filter(b => b.trim());
-      }
-
-      const parsedConversations = [];
-      
-      blocks.forEach((block, idx) => {
-        const lines = block.split('\n').filter(l => l.trim());
-        const messages = [];
-        let topic = `대화방 ${idx + 1}`;
-
-        lines.forEach(line => {
-          const idMatch = line.match(/^(ego_\d+-sess-[a-z0-9]+)/i);
-          if (idMatch) {
-            topic = idMatch[1];
-            line = line.substring(idMatch[1].length).trim();
+        // "번호. 화자: 내용" 포맷
+        const numMatch = trimmed.match(/^(\d+)\.\s*([^:]+):\s*(.*)$/);
+        if (numMatch) {
+          const num = parseInt(numMatch[1], 10);
+          
+          // 따옴표로 감싸여 있지 않은 평문 데이터일 경우 번호 리셋으로 방 분리
+          if (num <= lastNum) {
+            saveCurrent();
           }
+          lastNum = num;
+          currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
+          return;
+        }
 
-          if (!line) return;
+        // "화자: 내용" (번호가 없는 일반 포맷)
+        const stdMatch = trimmed.match(/^([^:]+):\s*(.*)$/);
+        if (stdMatch && !trimmed.startsWith('http')) {
+          currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
+          return;
+        }
 
-          const match = line.match(/^(.+?):\s*(.*)$/);
-          if (match) {
-            messages.push({ speaker: match[1].trim(), text: match[2].trim() });
-          } else if (messages.length > 0) {
-            messages[messages.length - 1].text += '\n' + line;
-          }
-        });
-
-        if (messages.length > 0) {
-          parsedConversations.push({ topic, messages });
+        // 어떠한 포맷도 아니라면 이전 메시지에 이어붙임
+        if (currentMessages.length > 0) {
+          currentMessages[currentMessages.length - 1].text += '\n' + trimmed;
         }
       });
+      
+      // 마지막 남은 메시지 그룹 저장
+      saveCurrent();
 
       return parsedConversations;
     }
 
-    // 대화방 메인 렌더러
     function renderConversation() {
       const total = state.conversations.length;
       el.indexTotal.textContent = String(total);
@@ -327,14 +363,10 @@
       const conversation = state.conversations[state.index];
       el.topic.textContent = conversation.topic;
       
-      // 보기 기준(Select 옵션) 렌더링 함수 호출
       renderViewerOptions(conversation);
-      
-      // 메시지 목록 렌더링
       renderChatMessages();
     }
 
-    // 대화 참여자 기반 보기 기준 옵션 설정 (기존 label.js 포맷 반영)
     function renderViewerOptions(conversation) {
       const speakers = [];
       conversation.messages.forEach(msg => {
@@ -343,7 +375,6 @@
         }
       });
 
-      // 기존 선택값 유지 보정
       const previous = state.viewerSpeaker;
       state.viewerSpeaker = speakers.includes(previous) ? previous : null;
 
@@ -357,12 +388,10 @@
       el.viewerSpeaker.value = state.viewerSpeaker || "";
     }
 
-    // 채팅 메시지 목록 출력
     function renderChatMessages() {
       const conversation = state.conversations[state.index];
       if (!conversation) return;
 
-      // 기준 발화자 사이드 배정 로직 (지정자 혹은 '나'가 있으면 right, 그 외 left)
       const targetSpeaker = state.viewerSpeaker || "나";
       
       el.chatBody.innerHTML = conversation.messages
@@ -375,7 +404,6 @@
       el.chatBody.scrollTop = 0;
     }
 
-    // 개별 메시지 렌더링 HTML (기존 label.js 구조)
     function renderMessage(message, side) {
       const mine = side === "right";
       const speaker = escapeHtml(message.speaker);
@@ -404,7 +432,6 @@
       `;
     }
 
-    // 내비게이션 및 이동
     function navigate(direction) {
       const total = state.conversations.length;
       if (total === 0) return;
@@ -431,7 +458,6 @@
       }
     }
 
-    // 아바타 & 이스케이프 유틸리티
     function renderAvatar(speaker) {
       const meta = avatarMetaForSpeaker(speaker);
       return `
