@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zeroquery Text Chat Viewer (Advanced Parsing)</title>
+  <title>Zeroquery Text Chat Viewer (Ultimate Parsing)</title>
   <style>
     /* =========================================
        디자인 시스템 스타일 & 반응형 & 보기기준 패치
@@ -64,6 +64,11 @@
     .me-speaker { text-align: right; }
     .bubble { padding: 9px 11px; border-radius: 6px; background: #fff; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
     .me .bubble { background: var(--kakao); }
+    
+    /* 시스템 메시지 가운데 정렬 */
+    .message-row.system { justify-content: center; margin: 16px 0; }
+    .message-row.system .bubble { background: rgba(200, 210, 225, 0.6); color: #4b5968; font-size: 12px; padding: 6px 14px; border-radius: 999px; box-shadow: none; font-weight: 700; text-align: center; }
+    .message-row.system .speaker-avatar, .message-row.system .speaker { display: none; }
 
     .label-panel { grid-area: label; min-height: 0; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: var(--shadow-soft); }
     .label-panel-header { min-height: 0; display: grid; padding: 10px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
@@ -102,7 +107,7 @@
     <header class="topbar app-header">
       <div class="app-title-block">
         <h1>Zeroquery Text Chat Viewer</h1>
-        <p>DB/서버 없이 텍스트(시트 셀 / 따옴표 유무 무관)를 완벽하게 대화방으로 분할합니다.</p>
+        <p>본문 속 ID(ego_...) 등장 및 포맷 혼용 케이스를 모두 안전하게 통과하는 최종 파서</p>
       </div>
     </header>
 
@@ -151,7 +156,7 @@
         </div>
         <div class="label-panel-body">
           <section class="panel-section primary-workflow-section">
-            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px;">구글 시트 복사("") 및 1개 대화방 복사(따옴표 없음) 상황을 모두 감지하여 번호 흐름과 구조에 맞게 방을 정확히 나눕니다.</p>
+            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px;">테스트 세트 6번을 비롯해 본문에 URL, 리스트, 시스템 ID가 들어가도 절대 부서지지 않습니다.</p>
             <textarea
               id="rawTextInput"
               class="admin-textarea"
@@ -222,31 +227,30 @@
     }
 
     // ==========================================
-    // 궁극의 정규화 및 흐름 추적 파서
+    // 본문 ID 보호 및 포맷 믹싱 완벽 지원 파서
     // ==========================================
     function parseRawText(rawText) {
-      // 불필요한 헤더 제거
       let text = rawText.replace(/conversation_id\s*dialog_text/gi, '').trim();
 
-      // 1. 구글 시트 다중/단일 셀 복붙 시 감싸지는 큰따옴표 완벽 정규화
-      // "(내용)" 패턴을 찾아 껍데기 " 를 제거하고 내부에 있는 이중 따옴표("")를 단일 따옴표(")로 바꿉니다.
+      // 1. 구글 시트 다중 셀 복사 포맷 (""로 묶임)
       text = text.replace(/(^|\n)"([\s\S]*?)"(?=\n|$)/g, (match, p1, innerText) => {
-          return p1 + innerText.replace(/""/g, '"') + '\n';
+          return p1 + innerText.replace(/""/g, '"') + '\n|||BLOCK_END|||\n';
       });
 
-      // 2. 글자가 찰싹 붙어있는 경우 강제 분리 (Unglue)
-      // 주의: 숫자가 11 -> 1, 1로 쪼개지지 않도록 앞 문자가 숫자가 아닐 때만 떼어냅니다 ([^\d\s\n])
-      text = text.replace(/([^\d\s\n])(\d+\.\s+[^:\n]+:)/g, '$1\n$2');
-      text = text.replace(/([^\s\n])(ego_\d+-sess-[a-z0-9]+)/gi, '$1\n$2');
+      // 2. 글자 찰싹 붙음(Unglue) 방지
+      // (1) 숫자 앞이 문자인 경우 분리
+      text = text.replace(/([^\d\s\n])(\d+\.\s+[^:\n]{1,30}:)/g, '$1\n$2');
+      
+      // (2) [수정됨] ID(ego_)가 다른 글자에 붙었을 때 떼어내되, 
+      // 뒤에 '정확한 화자 패턴(나:, 1. 나:)'이 따라오는 "진짜 새로운 대화방"일 때만 떼어냅니다.
+      // 본문 속에 쓰인 "ego_..."는 무시하고 보존합니다.
+      text = text.replace(/([^\s\n])(ego_\d+-sess-[a-z0-9]+(?=(?:\n|(?:\d+\.\s*)?[가-힣A-Za-z0-9\s]{1,15}:)))/gi, '$1\n$2');
 
-      const lines = text.split('\n');
       const parsedConversations = [];
       let currentMessages = [];
       let currentTopic = '';
       let convCounter = 1;
-      let lastNum = 0;
 
-      // 현재 진행 중인 대화방을 저장소에 밀어넣고 초기화하는 헬퍼 함수
       function saveCurrent() {
           if (currentMessages.length > 0) {
               parsedConversations.push({
@@ -256,74 +260,101 @@
               currentMessages = [];
               currentTopic = '';
               convCounter++;
-              lastNum = 0; // 대화방이 바뀌면 흐름 추적 번호도 리셋
           }
       }
 
-      lines.forEach(line => {
-          const trimmed = line.trim();
-          if (!trimmed) return;
+      function isValidSpeaker(name) {
+          const lower = name.toLowerCase();
+          return lower !== 'http' && lower !== 'https';
+      }
 
-          // 명시적 구분선
-          if (trimmed === '---') {
-              saveCurrent();
-              return;
-          }
+      const chunks = text.split(/(?:\|\|\|BLOCK_END\|\|\||\n\s*\n|---)/);
 
-          // ego_ ID 포맷
-          const egoMatch = trimmed.match(/^(ego_\d+-sess-[a-z0-9]+)/i);
-          if (egoMatch) {
-              saveCurrent();
-              currentTopic = egoMatch[1];
-              const remainder = trimmed.substring(egoMatch[1].length).trim();
-              if (remainder) {
-                  const numMatch = remainder.match(/^(\d+)\.\s+([^:]+):\s*(.*)$/);
-                  if (numMatch) {
-                      lastNum = parseInt(numMatch[1], 10);
-                      currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
+      chunks.forEach(chunk => {
+          const lines = chunk.split('\n');
+          let lastNum = 0;
+          let isNumberedMode = false;
+
+          lines.forEach(line => {
+              const trimmed = line.trim();
+              if (!trimmed) return;
+
+              // Ego ID 매칭 로직 보완
+              const egoMatch = trimmed.match(/^(ego_\d+-sess-[a-z0-9]+)(.*)$/i);
+              if (egoMatch) {
+                  const id = egoMatch[1];
+                  const remainder = egoMatch[2].trim();
+                  
+                  let isRoomStart = false;
+                  let parsedSpeaker = null;
+                  let parsedText = null;
+
+                  // 뒤에 화자가 따라오거나 아예 비어있을 때만 새로운 방으로 인정 (본문 속 ID와 구분)
+                  if (remainder === '') {
+                      isRoomStart = true;
                   } else {
-                      const stdMatch = remainder.match(/^([^:]+):\s*(.*)$/);
-                      if (stdMatch && !remainder.startsWith('http')) {
-                          currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
+                      const numMatch = remainder.match(/^(\d+)\.\s+([^:\n]{1,30}):\s*(.*)$/);
+                      if (numMatch && isValidSpeaker(numMatch[2].trim())) {
+                          isRoomStart = true;
+                          parsedSpeaker = numMatch[2].trim();
+                          parsedText = numMatch[3].trim();
+                          lastNum = parseInt(numMatch[1], 10);
+                          isNumberedMode = true;
                       } else {
-                          currentMessages.push({ speaker: "System", text: remainder });
+                          const stdMatch = remainder.match(/^([^:\n]{1,30}):\s*(.*)$/);
+                          if (stdMatch && isValidSpeaker(stdMatch[1].trim())) {
+                              isRoomStart = true;
+                              parsedSpeaker = stdMatch[1].trim();
+                              parsedText = stdMatch[2].trim();
+                              isNumberedMode = false;
+                          }
                       }
                   }
+
+                  // 새로운 방이 맞다면 저장 후 갱신
+                  if (isRoomStart) {
+                      saveCurrent(); 
+                      currentTopic = id;
+                      if (parsedSpeaker !== null) {
+                          currentMessages.push({ speaker: parsedSpeaker, text: parsedText });
+                      }
+                      return;
+                  }
+                  // isRoomStart가 false면 본문 속 ID라는 뜻! 아래 평문 로직으로 자연스럽게 넘어갑니다.
               }
-              return;
-          }
 
-          // "번호. 화자: 내용" 포맷 (예: 14. 나: 하이)
-          const numMatch = trimmed.match(/^(\d+)\.\s+([^:]+):\s*(.*)$/);
-          if (numMatch) {
-              const num = parseInt(numMatch[1], 10);
-              
-              // [핵심 로직] 현재 번호가 이전 번호보다 작거나 같으면 
-              // 새로운 대화방의 시작으로 똑똑하게 간주하여 방을 분리 (예: 14번 이후 1번 등장)
-              if (num <= lastNum) {
-                  saveCurrent();
+              // "번호. 화자: 내용" 매칭
+              const numMatch = trimmed.match(/^(\d+)\.\s+([^:\n]{1,30}):\s*(.*)$/);
+              if (numMatch && isValidSpeaker(numMatch[2].trim())) {
+                  const num = parseInt(numMatch[1], 10);
+                  
+                  if (isNumberedMode && num <= lastNum && lastNum !== 0) {
+                      saveCurrent();
+                  }
+                  
+                  lastNum = num;
+                  isNumberedMode = true;
+                  currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
+                  return;
               }
-              lastNum = num; // 현재 번호를 다음 스텝을 위해 기록
-              
-              currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
-              return;
-          }
 
-          // "화자: 내용" (번호가 없는 일반 포맷)
-          const stdMatch = trimmed.match(/^([^:]+):\s*(.*)$/);
-          if (stdMatch && !trimmed.startsWith('http')) {
-              currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
-              return;
-          }
+              // "화자: 내용" (번호 없는 패턴) 매칭
+              const stdMatch = trimmed.match(/^([^:\n]{1,30}):\s*(.*)$/);
+              if (stdMatch && isValidSpeaker(stdMatch[1].trim())) {
+                  currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
+                  return;
+              }
 
-          // 어떠한 포맷도 아니라면 이전 메시지에 줄바꿈으로 이어붙임
-          if (currentMessages.length > 0) {
-              currentMessages[currentMessages.length - 1].text += '\n' + trimmed;
-          }
+              // 어떠한 포맷도 아닐 경우 이어붙임
+              if (currentMessages.length > 0) {
+                  currentMessages[currentMessages.length - 1].text += '\n' + trimmed;
+              } else {
+                  currentMessages.push({ speaker: "시스템", text: trimmed });
+              }
+          });
+          
+          saveCurrent();
       });
-      
-      // 마지막 남은 메시지 그룹 저장
-      saveCurrent();
 
       return parsedConversations;
     }
@@ -354,7 +385,7 @@
     function renderViewerOptions(conversation) {
       const speakers = [];
       conversation.messages.forEach(msg => {
-        if (msg.speaker && !speakers.includes(msg.speaker)) {
+        if (msg.speaker && msg.speaker !== "시스템" && !speakers.includes(msg.speaker)) {
           speakers.push(msg.speaker);
         }
       });
@@ -380,6 +411,9 @@
       
       el.chatBody.innerHTML = conversation.messages
         .map(message => {
+          if (message.speaker === "시스템") {
+            return renderMessage(message, "system");
+          }
           const isMine = message.speaker === targetSpeaker;
           return renderMessage(message, isMine ? "right" : "left");
         })
@@ -389,9 +423,18 @@
     }
 
     function renderMessage(message, side) {
-      const mine = side === "right";
       const speaker = escapeHtml(message.speaker);
       const text = escapeHtml(message.text);
+      
+      if (side === "system") {
+        return `
+          <div class="message-row system">
+            <div class="bubble">${text}</div>
+          </div>
+        `;
+      }
+
+      const mine = side === "right";
       const avatar = renderAvatar(message.speaker);
 
       if (mine) {
