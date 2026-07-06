@@ -32,8 +32,8 @@
     .topbar { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
     .topbar h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
     .topbar p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
-    .app-header { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(0, auto); align-items: start; column-gap: 16px; min-height: 46px; padding-bottom: 2px; }
-    .app-title-block { min-width: 0; }
+    .app-header { display: flex; justify-content: space-between; align-items: center; min-height: 46px; padding-bottom: 2px; }
+    .app-title-block { min-width: 0; flex: 1; }
     
     .label-grid { min-height: 0; display: grid; grid-template-columns: minmax(560px, 1fr) clamp(520px, 38vw, 640px); grid-template-areas: "chat label"; gap: 16px; align-items: stretch; }
     
@@ -80,6 +80,29 @@
     .admin-textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 10px 12px; color: var(--ink); font: inherit; }
     .primary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; width: 100%; }
     .primary-action:hover { opacity: 0.9; }
+    .secondary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-weight: 800; cursor: pointer; text-decoration: none; padding: 0 16px; transition: background 0.15s ease; }
+    .secondary-action:hover { background: #f8fafc; border-color: #b9cdfc; }
+
+    /* =========================================
+       모달 (사용법 및 단축키 안내 팝업)
+       ========================================= */
+    .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(20, 27, 38, .45); padding: 24px; transition: opacity 0.2s ease; }
+    .modal-backdrop[hidden] { display: none !important; }
+    .modal-dialog { width: min(480px, 100%); background: #fff; border-radius: 12px; box-shadow: 0 24px 80px rgba(15, 23, 42, .25); overflow: hidden; display: flex; flex-direction: column; animation: modal-fade-in 0.2s ease-out; }
+    @keyframes modal-fade-in { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
+    .modal-header h2 { margin: 0; font-size: 17px; font-weight: 800; color: var(--ink); }
+    .close-button { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); line-height: 1; padding: 0; border-radius: 4px; }
+    .close-button:hover { color: var(--danger); }
+    .modal-body { padding: 20px 24px; font-size: 14px; color: #3f4856; line-height: 1.6; }
+    .modal-body h3 { margin: 0 0 10px 0; font-size: 15px; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+    
+    /* 리스트 스타일 커스텀 */
+    .modal-body ul, .modal-body ol { margin: 0 0 24px 0; padding-left: 22px; }
+    .modal-body li { margin-bottom: 8px; }
+    .modal-body li:last-child { margin-bottom: 0; }
+    
+    kbd { background: #f3f5f8; border: 1px solid #d9dee7; border-radius: 5px; padding: 3px 8px; font-size: 12px; font-family: monospace; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 900; }
 
     @media (max-width: 1180px) {
       body { overflow: auto; }
@@ -89,6 +112,7 @@
       .label-panel { height: auto; min-height: 350px; overflow: visible; }
       .label-panel-body { overflow: visible; }
       .admin-textarea { min-height: 200px; }
+      .app-header { flex-direction: column; align-items: flex-start; gap: 12px; }
     }
 
     @media (max-width: 768px) {
@@ -107,6 +131,10 @@
     <header class="topbar app-header">
       <div class="app-title-block">
         <h1>Zeroquery Text Chat Viewer</h1>
+        <p>텍스트 및 구글 시트 데이터를 채팅 화면으로 변환해주는 뷰어입니다.</p>
+      </div>
+      <div style="flex: 0 0 auto;">
+        <button id="helpButton" class="secondary-action" type="button" style="border-radius: 999px; height: 36px; font-size: 13px;">💡 사용법 및 단축키</button>
       </div>
     </header>
 
@@ -119,8 +147,8 @@
           </div>
           <div class="chat-header-tools">
             <div class="chat-nav-pair" aria-label="대화 이동">
-              <button class="nav-button" id="prevButton" type="button" aria-label="이전 대화">‹</button>
-              <button class="nav-button" id="nextButton" type="button" aria-label="다음 대화">›</button>
+              <button class="nav-button" id="prevButton" type="button" aria-label="이전 대화" title="이전 대화 (단축키: Q)">‹</button>
+              <button class="nav-button" id="nextButton" type="button" aria-label="다음 대화" title="다음 대화 (단축키: E)">›</button>
             </div>
             <label class="viewer-control">
               <span>보기 기준</span>
@@ -155,6 +183,7 @@
         </div>
         <div class="label-panel-body">
           <section class="panel-section primary-workflow-section">
+            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px;">구글 시트 셀 복사 데이터 또는 일반 텍스트 대화 포맷을 자동으로 인식하여 분할합니다.</p>
             <textarea
               id="rawTextInput"
               class="admin-textarea"
@@ -169,6 +198,30 @@
       </aside>
     </section>
   </main>
+
+  <div id="helpModal" class="modal-backdrop" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>사용법 및 단축키 안내</h2>
+        <button id="closeHelpButton" class="close-button" aria-label="닫기">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3>💡 사용법</h3>
+        <ol>
+          <li><strong>복사하기:</strong> 구글 시트나 메모장 등에서 대화 기록을 복사합니다.</li>
+          <li><strong>붙여넣기:</strong> 우측 <strong>원시 데이터 입력</strong> 창에 그대로 붙여넣습니다.<br><small style="color:var(--muted);">(※ <code>1. 화자:</code>, <code>0 - 화자:</code>, 번호 없는 포맷, 시트 묶음 <code>""</code> 모두 자동 감지)</small></li>
+          <li><strong>파싱하기:</strong> <code>파싱하여 뷰어에 띄우기</code> 버튼을 클릭합니다.</li>
+          <li><strong>뷰어 조작:</strong> 좌측 화면에서 보기 기준을 변경하거나, 대화방을 이동하며 내용을 확인합니다.</li>
+        </ol>
+        <h3>⌨️ 단축키</h3>
+        <ul>
+          <li><kbd>Q</kbd> : <strong>이전 대화방</strong>으로 이동</li>
+          <li><kbd>E</kbd> : <strong>다음 대화방</strong>으로 이동</li>
+          <li style="color: #6f7782; font-size: 12.5px; margin-top: 10px;">* 입력창에서 텍스트 작성 중일 때는 단축키가 작동하지 않습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
   <script>
     const state = {
@@ -186,7 +239,10 @@
       nextButton: document.getElementById("nextButton"),
       rawTextInput: document.getElementById("rawTextInput"),
       parseButton: document.getElementById("parseButton"),
-      viewerSpeaker: document.getElementById("viewerSpeaker")
+      viewerSpeaker: document.getElementById("viewerSpeaker"),
+      helpButton: document.getElementById("helpButton"),
+      helpModal: document.getElementById("helpModal"),
+      closeHelpButton: document.getElementById("closeHelpButton"),
     };
 
     function init() {
@@ -210,6 +266,27 @@
         const target = parseInt(e.target.value, 10) - 1;
         goToIndex(target);
       });
+
+      el.helpButton.addEventListener("click", () => el.helpModal.hidden = false);
+      el.closeHelpButton.addEventListener("click", () => el.helpModal.hidden = true);
+      el.helpModal.addEventListener("click", (e) => {
+        if (e.target === el.helpModal) el.helpModal.hidden = true;
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !el.helpModal.hidden) {
+          el.helpModal.hidden = true;
+          return;
+        }
+
+        if (e.target.matches("input, textarea, select")) return;
+
+        if (e.key.toLowerCase() === "q") {
+          navigate(-1);
+        } else if (e.key.toLowerCase() === "e") {
+          navigate(1);
+        }
+      });
     }
 
     function handleParse() {
@@ -224,19 +301,13 @@
       renderConversation();
     }
 
-    // ==========================================
-    // "0 - 화자:" 및 "1. 화자:" 다중 포맷 완벽 지원 파서
-    // ==========================================
     function parseRawText(rawText) {
       let text = rawText.replace(/conversation_id\s*dialog_text/gi, '').trim();
 
-      // 1. 구글 시트 다중 셀 복사 포맷 (""로 묶임)
       text = text.replace(/(^|\n)"([\s\S]*?)"(?=\n|$)/g, (match, p1, innerText) => {
           return p1 + innerText.replace(/""/g, '"') + '\n|||BLOCK_END|||\n';
       });
 
-      // 2. 글자 찰싹 붙음(Unglue) 방지
-      // [수정됨] 하이픈(-) 포맷 대응을 위해 정규식 확장
       text = text.replace(/([^\d\s\n])(\d+(?:\.\s+|\s*-\s+)[^:\n]{1,30}:)/g, '$1\n$2');
       text = text.replace(/([^\s\n])(ego_\d+-sess-[a-z0-9]+(?=(?:\n|(?:\d+(?:\.\s+|\s*-\s+))?[^:\n]{1,30}:)))/gi, '$1\n$2');
 
@@ -262,12 +333,10 @@
           return lower !== 'http' && lower !== 'https';
       }
 
-      // 크게 청크(방 단위)를 나누는 정규식
       const chunks = text.split(/(?:\|\|\|BLOCK_END\|\|\||\n\s*\n|---)/);
 
       chunks.forEach(chunk => {
           const lines = chunk.split('\n');
-          // [수정됨] 번호가 0번부터 시작할 수 있으므로 lastNum의 초기값을 -1로 세팅
           let lastNum = -1;
           let isNumberedMode = false;
 
@@ -275,14 +344,12 @@
               const trimmed = line.trim();
               if (!trimmed) return;
 
-              // Ego ID 매칭
               const egoMatch = trimmed.match(/^(ego_\d+-sess-[a-z0-9]+)(.*)$/i);
               if (egoMatch) {
-                  saveCurrent(); // 새로운 ID가 등장하면 방을 나눔
+                  saveCurrent();
                   currentTopic = egoMatch[1];
                   const remainder = egoMatch[2].trim();
                   if (remainder) {
-                      // [수정됨] 번호 형식 감지 정규식 확장 (점 및 하이픈 둘 다 허용)
                       const numMatch = remainder.match(/^(\d+)(?:\.\s+|\s*-\s+)([^:\n]{1,30}):\s*(.*)$/);
                       if (numMatch && isValidSpeaker(numMatch[2].trim())) {
                           lastNum = parseInt(numMatch[1], 10);
@@ -301,12 +368,10 @@
                   return;
               }
 
-              // "번호. 화자: 내용" OR "번호 - 화자: 내용" 매칭
               const numMatch = trimmed.match(/^(\d+)(?:\.\s+|\s*-\s+)([^:\n]{1,30}):\s*(.*)$/);
               if (numMatch && isValidSpeaker(numMatch[2].trim())) {
                   const num = parseInt(numMatch[1], 10);
                   
-                  // 넘버링 모드일 때 번호가 리셋되면 새로운 방 (-1이면 첫 시작이므로 무시)
                   if (isNumberedMode && num <= lastNum && lastNum !== -1) {
                       saveCurrent();
                   }
@@ -317,15 +382,12 @@
                   return;
               }
 
-              // "화자: 내용" (번호 없는 패턴) 매칭
               const stdMatch = trimmed.match(/^([^:\n]{1,30}):\s*(.*)$/);
               if (stdMatch && isValidSpeaker(stdMatch[1].trim())) {
-                  // 일반 포맷
                   currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
                   return;
               }
 
-              // 어떠한 포맷도 아닐 경우 이어붙임
               if (currentMessages.length > 0) {
                   currentMessages[currentMessages.length - 1].text += '\n' + trimmed;
               } else {
@@ -333,7 +395,6 @@
               }
           });
           
-          // 하나의 큰 덩어리(청크)가 끝나면 대화방을 저장
           saveCurrent();
       });
 
