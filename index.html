@@ -39,9 +39,20 @@
     
     .chat-panel { grid-area: chat; min-height: 0; display: grid; grid-template-rows: auto 1fr; border: 1px solid #9eb9d4; border-radius: 8px; overflow: hidden; background: var(--chat-bg); }
     .chat-header { min-height: 56px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255, 255, 255, .45); border-bottom: 1px solid rgba(0, 0, 0, .08); }
-    .chat-header > div:first-child { flex: 1 1 auto; min-width: 0; }
+    .chat-header > div:first-child { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    
     .eyebrow { display: block; color: #546475; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-    .chat-header h2 { margin: 2px 0 0; font-size: 17px; line-height: 1.25; max-width: 100%; }
+    
+    .chat-topic-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .chat-header h2 { margin: 0; font-size: 17px; line-height: 1.25; max-width: 100%; }
+    
+    /* 메타데이터 뱃지 스타일 */
+    .meta-badges { display: flex; align-items: center; gap: 6px; }
+    .meta-badge { padding: 3px 7px; border-radius: 5px; font-size: 11px; font-weight: 800; line-height: 1; white-space: nowrap; }
+    .meta-domain { background: var(--accent-soft); color: var(--accent); border: 1px solid #c7dcfc; }
+    .meta-host { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+    .meta-interrupt { background: #fff5eb; color: #d97706; border: 1px solid #fde6ce; }
+    
     .chat-header-tools { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
     .chat-nav-pair { display: inline-flex; align-items: center; gap: 6px; }
     .nav-button { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: #424852; font-size: 26px; line-height: 1; cursor: pointer; }
@@ -54,7 +65,7 @@
     .conversation-index-input:focus { outline: 2px solid rgba(31, 111, 234, .38); outline-offset: 0; background: rgba(255, 255, 255, .9); }
     .conversation-index-input:disabled { color: var(--muted); cursor: default; }
     .chat-body { min-height: 0; overflow-y: auto; padding: 16px; }
-    .empty-state { height: 100%; display: flex; align-items: center; justify-content: center; color: #4b5968; font-size: 14px; }
+    .empty-state { height: 100%; display: flex; align-items: center; justify-content: center; color: #4b5968; font-size: 14px; text-align: center; line-height: 1.5; }
     
     .message-row { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; }
     .message-row.me { justify-content: flex-end; }
@@ -65,7 +76,6 @@
     .bubble { padding: 9px 11px; border-radius: 6px; background: #fff; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
     .me .bubble { background: var(--kakao); }
     
-    /* 시스템 메시지 가운데 정렬 */
     .message-row.system { justify-content: center; margin: 16px 0; }
     .message-row.system .bubble { background: rgba(200, 210, 225, 0.6); color: #4b5968; font-size: 12px; padding: 6px 14px; border-radius: 999px; box-shadow: none; font-weight: 700; text-align: center; }
     .message-row.system .speaker-avatar, .message-row.system .speaker { display: none; }
@@ -77,32 +87,30 @@
     .panel-section { min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 10px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
     .primary-workflow-section { flex: 1; border: 0; border-bottom: 1px solid #edf0f5; border-radius: 0; background: transparent; box-shadow: none; padding: 12px 10px; }
     .section-title { margin-bottom: 9px; color: var(--muted); font-size: 12px; font-weight: 800; }
-    .admin-textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 10px 12px; color: var(--ink); font: inherit; }
+    .admin-textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 10px 12px; color: var(--ink); font: inherit; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
     .primary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; width: 100%; }
     .primary-action:hover { opacity: 0.9; }
     .secondary-action { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-weight: 800; cursor: pointer; text-decoration: none; padding: 0 16px; transition: background 0.15s ease; }
     .secondary-action:hover { background: #f8fafc; border-color: #b9cdfc; }
 
-    /* =========================================
-       모달 (사용법 및 단축키 안내 팝업)
-       ========================================= */
+    /* 모달 */
     .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(20, 27, 38, .45); padding: 24px; transition: opacity 0.2s ease; }
     .modal-backdrop[hidden] { display: none !important; }
-    .modal-dialog { width: min(480px, 100%); background: #fff; border-radius: 12px; box-shadow: 0 24px 80px rgba(15, 23, 42, .25); overflow: hidden; display: flex; flex-direction: column; animation: modal-fade-in 0.2s ease-out; }
+    .modal-dialog { width: min(520px, 100%); background: #fff; border-radius: 12px; box-shadow: 0 24px 80px rgba(15, 23, 42, .25); overflow: hidden; display: flex; flex-direction: column; animation: modal-fade-in 0.2s ease-out; }
     @keyframes modal-fade-in { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
     .modal-header h2 { margin: 0; font-size: 17px; font-weight: 800; color: var(--ink); }
     .close-button { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); line-height: 1; padding: 0; border-radius: 4px; }
     .close-button:hover { color: var(--danger); }
-    .modal-body { padding: 20px 24px; font-size: 14px; color: #3f4856; line-height: 1.6; }
+    .modal-body { padding: 20px 24px; font-size: 14px; color: #3f4856; line-height: 1.6; max-height: 70vh; overflow-y: auto; }
     .modal-body h3 { margin: 0 0 10px 0; font-size: 15px; color: var(--ink); display: flex; align-items: center; gap: 6px; }
     
-    /* 리스트 스타일 커스텀 */
     .modal-body ul, .modal-body ol { margin: 0 0 24px 0; padding-left: 22px; }
     .modal-body li { margin-bottom: 8px; }
     .modal-body li:last-child { margin-bottom: 0; }
     
     kbd { background: #f3f5f8; border: 1px solid #d9dee7; border-radius: 5px; padding: 3px 8px; font-size: 12px; font-family: monospace; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 900; }
+    .highlight-box { background: #f8fafc; border: 1px dashed #b9cdfc; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-size: 13px; }
 
     @media (max-width: 1180px) {
       body { overflow: auto; }
@@ -119,11 +127,6 @@
       .chat-header { min-height: auto; flex-direction: column; align-items: flex-start; gap: 8px; }
       .chat-header-tools { width: 100%; justify-content: space-between; flex-wrap: wrap; }
     }
-
-    @media (max-width: 600px) {
-      .topbar h1 { font-size: 18px; }
-      .message-stack { max-width: 85%; }
-    }
   </style>
 </head>
 <body>
@@ -131,7 +134,7 @@
     <header class="topbar app-header">
       <div class="app-title-block">
         <h1>Zeroquery Text Chat Viewer</h1>
-        <p>텍스트 및 구글 시트 데이터를 채팅 화면으로 변환해주는 뷰어입니다.</p>
+        <p>텍스트 포맷 및 구글 시트(다중 컬럼) 데이터를 채팅 화면으로 변환해주는 뷰어입니다.</p>
       </div>
       <div style="flex: 0 0 auto;">
         <button id="helpButton" class="secondary-action" type="button" style="border-radius: 999px; height: 36px; font-size: 13px;">💡 사용법 및 단축키</button>
@@ -143,7 +146,14 @@
         <div class="chat-header">
           <div>
             <span class="eyebrow">Conversation</span>
-            <h2 id="conversationTopic">대화를 불러오세요</h2>
+            <div class="chat-topic-row">
+              <h2 id="conversationTopic">대화를 불러오세요</h2>
+              <div id="metaContainer" class="meta-badges" hidden>
+                <span id="metaDomain" class="meta-badge meta-domain"></span>
+                <span id="metaHost" class="meta-badge meta-host"></span>
+                <span id="metaInterrupt" class="meta-badge meta-interrupt"></span>
+              </div>
+            </div>
           </div>
           <div class="chat-header-tools">
             <div class="chat-nav-pair" aria-label="대화 이동">
@@ -153,7 +163,7 @@
             <label class="viewer-control">
               <span>보기 기준</span>
               <select id="viewerSpeaker">
-                <option value="">단톡방</option>
+                <option value="">자동 (Host/나)</option>
               </select>
             </label>
             <span class="conversation-index-control" aria-label="대화 번호 이동">
@@ -173,7 +183,7 @@
           </div>
         </div>
         <div id="chatBody" class="chat-body">
-          <div class="empty-state">우측 입력창에 텍스트를 넣고 파싱 버튼을 눌러주세요.</div>
+          <div class="empty-state">우측 입력창에 텍스트 또는<br>구글 시트(전체 컬럼) 데이터를 넣고<br>파싱 버튼을 눌러주세요.</div>
         </div>
       </article>
 
@@ -183,12 +193,15 @@
         </div>
         <div class="label-panel-body">
           <section class="panel-section primary-workflow-section">
-            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px;">구글 시트 셀 복사 데이터 또는 일반 텍스트 대화 포맷을 자동으로 인식하여 분할합니다.</p>
+            <p style="margin: 0 0 10px 0; color: #6f7782; font-size: 12px; line-height: 1.5;">
+              <strong>[모드 1] 구글 시트 데이터 (권장):</strong> 헤더(<code>text</code>, <code>host</code>, <code>domain_gt</code> 등)를 포함하여 열 전체를 드래그 복사 후 붙여넣으세요.<br>
+              <strong>[모드 2] 일반 텍스트 포맷:</strong> 대화 내용만 있을 경우 기존처럼 분할 감지합니다.
+            </p>
             <textarea
               id="rawTextInput"
               class="admin-textarea"
               style="flex: 1; min-height: 250px; resize: vertical;"
-              placeholder="여기에 텍스트를 붙여넣어주세요..."
+              placeholder="여기에 텍스트나 구글 시트 복사본(TSV)을 붙여넣어주세요..."
             ></textarea>
           </section>
         </div>
@@ -206,12 +219,16 @@
         <button id="closeHelpButton" class="close-button" aria-label="닫기">&times;</button>
       </div>
       <div class="modal-body">
-        <h3>💡 사용법</h3>
+        <div class="highlight-box">
+          <strong>🚀 [NEW] 구글 시트 데이터(다중 컬럼) 자동 감지 기능 지원!</strong><br>
+          구글 시트에서 <code>domain_gt</code>, <code>text</code>, <code>host</code>, <code>interrupt</code> 등의 헤더 행을 포함하여 엑셀 셀 전체를 복사해서 붙여넣으면, 방별로 자동 분할해주고 헤더 영역에 메타데이터를 표시해 줍니다. 
+          보기 기준(디폴트) 역시 각 방에 매핑된 <code>host</code>로 자동 셋팅됩니다.
+        </div>
+        <h3>💡 텍스트 모드 사용법 (Legacy)</h3>
         <ol>
-          <li><strong>복사하기:</strong> 구글 시트나 메모장 등에서 대화 기록을 복사합니다.</li>
-          <li><strong>붙여넣기:</strong> 우측 <strong>원시 데이터 입력</strong> 창에 그대로 붙여넣습니다.<br><small style="color:var(--muted);">(※ <code>1. 화자:</code>, <code>0 - 화자:</code>, 번호 없는 포맷, 시트 묶음 <code>""</code> 모두 자동 감지)</small></li>
-          <li><strong>파싱하기:</strong> <code>파싱하여 뷰어에 띄우기</code> 버튼을 클릭합니다.</li>
-          <li><strong>뷰어 조작:</strong> 좌측 화면에서 보기 기준을 변경하거나, 대화방을 이동하며 내용을 확인합니다.</li>
+          <li>구글 시트의 단일 텍스트 셀 묶음이나 메모장 등에서 대화 기록 복사</li>
+          <li>우측 입력 창에 그대로 붙여넣기<br><small style="color:var(--muted);">(※ <code>1. 화자:</code>, <code>0 - 화자:</code>, 번호 없는 포맷, 시트 묶음 <code>""</code> 모두 자동 감지)</small></li>
+          <li><code>파싱하여 뷰어에 띄우기</code> 버튼 클릭</li>
         </ol>
         <h3>⌨️ 단축키</h3>
         <ul>
@@ -233,6 +250,10 @@
     const el = {
       chatBody: document.getElementById("chatBody"),
       topic: document.getElementById("conversationTopic"),
+      metaContainer: document.getElementById("metaContainer"),
+      metaDomain: document.getElementById("metaDomain"),
+      metaHost: document.getElementById("metaHost"),
+      metaInterrupt: document.getElementById("metaInterrupt"),
       indexInput: document.getElementById("conversationIndexInput"),
       indexTotal: document.getElementById("conversationIndexTotal"),
       prevButton: document.getElementById("prevButton"),
@@ -278,14 +299,9 @@
           el.helpModal.hidden = true;
           return;
         }
-
         if (e.target.matches("input, textarea, select")) return;
-
-        if (e.key.toLowerCase() === "q") {
-          navigate(-1);
-        } else if (e.key.toLowerCase() === "e") {
-          navigate(1);
-        }
+        if (e.key.toLowerCase() === "q") navigate(-1);
+        else if (e.key.toLowerCase() === "e") navigate(1);
       });
     }
 
@@ -302,6 +318,135 @@
     }
 
     function parseRawText(rawText) {
+      const firstLine = rawText.split('\n')[0].toLowerCase();
+      const isStructured = firstLine.includes('text') || firstLine.includes('dialog_text');
+
+      if (isStructured) {
+        const delimiter = rawText.includes('\t') ? '\t' : (rawText.includes(',') ? ',' : null);
+        if (delimiter) {
+          const rows = parseDSV(rawText, delimiter);
+          const convs = parseStructuredData(rows);
+          if (convs && convs.length > 0) return convs;
+        }
+      }
+      
+      return parseLegacyData(rawText);
+    }
+
+    function parseDSV(text, delimiter) {
+      const rows = [];
+      let currentRow = [];
+      let currentCell = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i+1];
+        
+        if (inQuotes) {
+          if (char === '"' && nextChar === '"') {
+            currentCell += '"';
+            i++; 
+          } else if (char === '"') {
+            inQuotes = false;
+          } else {
+            currentCell += char;
+          }
+        } else {
+          if (char === '"') {
+            inQuotes = true;
+          } else if (char === delimiter) {
+            currentRow.push(currentCell);
+            currentCell = '';
+          } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+            if (char === '\r') i++;
+            currentRow.push(currentCell);
+            rows.push(currentRow);
+            currentRow = [];
+            currentCell = '';
+          } else {
+            currentCell += char;
+          }
+        }
+      }
+      if (currentCell || currentRow.length > 0) {
+        currentRow.push(currentCell);
+        rows.push(currentRow);
+      }
+      return rows;
+    }
+
+    function parseStructuredData(rows) {
+      if (rows.length < 2) return null;
+      
+      const header = rows[0].map(h => h.trim().toLowerCase());
+      const idIdx = header.findIndex(h => h === 'id' || h === 'conversation_id');
+      const domainIdx = header.findIndex(h => h === 'domain_gt' || h === 'domain');
+      const textIdx = header.findIndex(h => h === 'text' || h === 'dialog_text');
+      const hostIdx = header.findIndex(h => h === 'host');
+      const interruptIdx = header.findIndex(h => h === 'interrupt');
+      
+      if (textIdx === -1) return null;
+      
+      const conversations = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length <= textIdx) continue;
+        
+        const rawText = row[textIdx];
+        if (!rawText.trim()) continue;
+        
+        conversations.push({
+          topic: (idIdx !== -1 && row[idIdx]) ? `대화방 ${row[idIdx]}` : `대화방 ${i}`,
+          domain_gt: domainIdx !== -1 && row[domainIdx] ? row[domainIdx] : null,
+          interrupt: interruptIdx !== -1 && row[interruptIdx] ? row[interruptIdx] : null,
+          host: hostIdx !== -1 && row[hostIdx] ? row[hostIdx].trim() : null,
+          messages: parseConversationText(rawText)
+        });
+      }
+      return conversations;
+    }
+
+    function parseConversationText(textBlock) {
+      const lines = textBlock.split('\n');
+      const currentMessages = [];
+      let isNumberedMode = false;
+      let lastNum = -1;
+
+      function isValidSpeaker(name) {
+        const lower = name.toLowerCase();
+        return lower !== 'http' && lower !== 'https';
+      }
+
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        const numMatch = trimmed.match(/^(\d+)(?:\.\s+|\s*-\s+)([^:\n]{1,30}):\s*(.*)$/);
+        if (numMatch && isValidSpeaker(numMatch[2].trim())) {
+          lastNum = parseInt(numMatch[1], 10);
+          isNumberedMode = true;
+          currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
+          return;
+        }
+
+        const stdMatch = trimmed.match(/^([^:\n]{1,30}):\s*(.*)$/);
+        if (stdMatch && isValidSpeaker(stdMatch[1].trim())) {
+          currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
+          return;
+        }
+
+        if (currentMessages.length > 0) {
+          currentMessages[currentMessages.length - 1].text += '\n' + trimmed;
+        } else {
+          currentMessages.push({ speaker: "시스템", text: trimmed });
+        }
+      });
+
+      return currentMessages;
+    }
+
+    function parseLegacyData(rawText) {
       let text = rawText.replace(/conversation_id\s*dialog_text/gi, '').trim();
 
       text = text.replace(/(^|\n)"([\s\S]*?)"(?=\n|$)/g, (match, p1, innerText) => {
@@ -312,90 +457,35 @@
       text = text.replace(/([^\s\n])(ego_\d+-sess-[a-z0-9]+(?=(?:\n|(?:\d+(?:\.\s+|\s*-\s+))?[^:\n]{1,30}:)))/gi, '$1\n$2');
 
       const parsedConversations = [];
-      let currentMessages = [];
       let currentTopic = '';
       let convCounter = 1;
 
-      function saveCurrent() {
-          if (currentMessages.length > 0) {
-              parsedConversations.push({
-                  topic: currentTopic || `대화방 ${convCounter}`,
-                  messages: [...currentMessages]
-              });
-              currentMessages = [];
-              currentTopic = '';
-              convCounter++;
-          }
-      }
-
-      function isValidSpeaker(name) {
-          const lower = name.toLowerCase();
-          return lower !== 'http' && lower !== 'https';
-      }
-
       const chunks = text.split(/(?:\|\|\|BLOCK_END\|\|\||\n\s*\n|---)/);
-
       chunks.forEach(chunk => {
-          const lines = chunk.split('\n');
-          let lastNum = -1;
-          let isNumberedMode = false;
+        let blockText = chunk;
+        const lines = chunk.split('\n');
+        
+        let firstLine = lines[0] ? lines[0].trim() : '';
+        const egoMatch = firstLine.match(/^(ego_\d+-sess-[a-z0-9]+)(.*)$/i);
+        if (egoMatch) {
+            currentTopic = egoMatch[1];
+            blockText = egoMatch[2].trim() + '\n' + lines.slice(1).join('\n');
+        }
 
-          lines.forEach(line => {
-              const trimmed = line.trim();
-              if (!trimmed) return;
+        if (!blockText.trim()) return;
 
-              const egoMatch = trimmed.match(/^(ego_\d+-sess-[a-z0-9]+)(.*)$/i);
-              if (egoMatch) {
-                  saveCurrent();
-                  currentTopic = egoMatch[1];
-                  const remainder = egoMatch[2].trim();
-                  if (remainder) {
-                      const numMatch = remainder.match(/^(\d+)(?:\.\s+|\s*-\s+)([^:\n]{1,30}):\s*(.*)$/);
-                      if (numMatch && isValidSpeaker(numMatch[2].trim())) {
-                          lastNum = parseInt(numMatch[1], 10);
-                          isNumberedMode = true;
-                          currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
-                      } else {
-                          const stdMatch = remainder.match(/^([^:\n]{1,30}):\s*(.*)$/);
-                          if (stdMatch && isValidSpeaker(stdMatch[1].trim())) {
-                              isNumberedMode = false;
-                              currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
-                          } else {
-                              currentMessages.push({ speaker: "시스템", text: remainder });
-                          }
-                      }
-                  }
-                  return;
-              }
-
-              const numMatch = trimmed.match(/^(\d+)(?:\.\s+|\s*-\s+)([^:\n]{1,30}):\s*(.*)$/);
-              if (numMatch && isValidSpeaker(numMatch[2].trim())) {
-                  const num = parseInt(numMatch[1], 10);
-                  
-                  if (isNumberedMode && num <= lastNum && lastNum !== -1) {
-                      saveCurrent();
-                  }
-                  
-                  lastNum = num;
-                  isNumberedMode = true;
-                  currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
-                  return;
-              }
-
-              const stdMatch = trimmed.match(/^([^:\n]{1,30}):\s*(.*)$/);
-              if (stdMatch && isValidSpeaker(stdMatch[1].trim())) {
-                  currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
-                  return;
-              }
-
-              if (currentMessages.length > 0) {
-                  currentMessages[currentMessages.length - 1].text += '\n' + trimmed;
-              } else {
-                  currentMessages.push({ speaker: "시스템", text: trimmed });
-              }
-          });
-          
-          saveCurrent();
+        const messages = parseConversationText(blockText);
+        if (messages.length > 0) {
+            parsedConversations.push({
+                topic: currentTopic || `대화방 ${convCounter}`,
+                domain_gt: null,
+                interrupt: null,
+                host: null,
+                messages: messages
+            });
+            currentTopic = '';
+            convCounter++;
+        }
       });
 
       return parsedConversations;
@@ -407,10 +497,11 @@
       
       if (total === 0) {
         el.topic.textContent = "대화를 불러오세요";
+        el.metaContainer.hidden = true;
         el.indexInput.value = "0";
         el.indexInput.disabled = true;
-        el.chatBody.innerHTML = '<div class="empty-state">파싱된 대화가 없습니다. 텍스트 포맷을 확인해주세요.</div>';
-        el.viewerSpeaker.innerHTML = '<option value="">단톡방</option>';
+        el.chatBody.innerHTML = '<div class="empty-state">파싱된 대화가 없습니다.<br>텍스트나 구글 시트 데이터를 확인해주세요.</div>';
+        el.viewerSpeaker.innerHTML = '<option value="">자동 (Host/나)</option>';
         return;
       }
 
@@ -419,6 +510,30 @@
 
       const conversation = state.conversations[state.index];
       el.topic.textContent = conversation.topic;
+      
+      // 메타데이터 표시 로직 (domain_gt, host, interrupt)
+      if (conversation.domain_gt || conversation.interrupt || conversation.host) {
+        el.metaContainer.hidden = false;
+        
+        if (conversation.domain_gt) {
+          el.metaDomain.style.display = 'inline-block';
+          el.metaDomain.textContent = `도메인: ${conversation.domain_gt}`;
+        } else { el.metaDomain.style.display = 'none'; }
+
+        if (conversation.host) {
+          el.metaHost.style.display = 'inline-block';
+          el.metaHost.textContent = `Host: ${conversation.host}`;
+        } else { el.metaHost.style.display = 'none'; }
+        
+        if (conversation.interrupt) {
+          el.metaInterrupt.style.display = 'inline-block';
+          const interText = conversation.interrupt.toUpperCase() === 'TRUE' ? 'Interrupt O' : 
+                            (conversation.interrupt.toUpperCase() === 'FALSE' ? 'Interrupt X' : conversation.interrupt);
+          el.metaInterrupt.textContent = interText;
+        } else { el.metaInterrupt.style.display = 'none'; }
+      } else {
+        el.metaContainer.hidden = true;
+      }
       
       renderViewerOptions(conversation);
       renderChatMessages();
@@ -432,24 +547,41 @@
         }
       });
 
-      const previous = state.viewerSpeaker;
-      state.viewerSpeaker = speakers.includes(previous) ? previous : null;
-
       el.viewerSpeaker.innerHTML = [
-        '<option value="">단톡방</option>',
+        '<option value="">(자동 선택)</option>',
         ...speakers.map(speaker => (
           `<option value="${escapeHtml(speaker)}">${escapeHtml(speaker)} 기준</option>`
         )),
       ].join("");
       
-      el.viewerSpeaker.value = state.viewerSpeaker || "";
+      if (state.viewerSpeaker && speakers.includes(state.viewerSpeaker)) {
+        el.viewerSpeaker.value = state.viewerSpeaker;
+      } else {
+        el.viewerSpeaker.value = "";
+      }
+    }
+
+    function getTargetSpeaker(conversation) {
+      if (state.viewerSpeaker) return state.viewerSpeaker;
+      
+      const speakers = [];
+      conversation.messages.forEach(msg => {
+        if (msg.speaker && msg.speaker !== "시스템" && !speakers.includes(msg.speaker)) {
+          speakers.push(msg.speaker);
+        }
+      });
+
+      if (conversation.host && speakers.includes(conversation.host)) return conversation.host;
+      if (speakers.includes("나")) return "나";
+      if (speakers.length > 0) return speakers[0];
+      return "나";
     }
 
     function renderChatMessages() {
       const conversation = state.conversations[state.index];
       if (!conversation) return;
 
-      const targetSpeaker = state.viewerSpeaker || "나";
+      const targetSpeaker = getTargetSpeaker(conversation);
       
       el.chatBody.innerHTML = conversation.messages
         .map(message => {
