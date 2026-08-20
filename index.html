@@ -221,7 +221,7 @@
       <div class="modal-body">
         <div class="highlight-box">
           <strong>🚀 [NEW] 구글 시트 데이터(다중 컬럼) 자동 감지 기능 지원!</strong><br>
-          구글 시트에서 <code>domain_gt</code>, <code>text</code>, <code>host</code>, <code>interrupt</code> 등의 헤더 행을 포함하여 엑셀 셀 전체를 복사해서 붙여넣으면, 방별로 자동 분할해주고 헤더 영역에 메타데이터를 표시해 줍니다. 
+          구글 시트에서 <code>domain_gt</code>, <code>text</code>, <code>ondevice_dialog</code>, <code>dialog</code>, <code>host</code>, <code>interrupt</code> 등의 헤더 행을 포함하여 엑셀 셀 전체를 복사해서 붙여넣으면, 방별로 자동 분할해주고 헤더 영역에 메타데이터를 표시해 줍니다. 
           보기 기준(디폴트) 역시 각 방에 매핑된 <code>host</code>로 자동 셋팅됩니다.
         </div>
         <h3>💡 텍스트 모드 사용법 (Legacy)</h3>
@@ -319,7 +319,8 @@
 
     function parseRawText(rawText) {
       const firstLine = rawText.split('\n')[0].toLowerCase();
-      const isStructured = firstLine.includes('text') || firstLine.includes('dialog_text');
+      const structuredAliases = ['text', 'dialog_text', 'ondevice_dialog', 'dialog'];
+      const isStructured = structuredAliases.some(alias => firstLine.includes(alias));
 
       if (isStructured) {
         const delimiter = rawText.includes('\t') ? '\t' : (rawText.includes(',') ? ',' : null);
@@ -380,9 +381,10 @@
       if (rows.length < 2) return null;
       
       const header = rows[0].map(h => h.trim().toLowerCase());
+      const structuredAliases = ['text', 'dialog_text', 'ondevice_dialog', 'dialog'];
       const idIdx = header.findIndex(h => h === 'id' || h === 'conversation_id');
       const domainIdx = header.findIndex(h => h === 'domain_gt' || h === 'domain');
-      const textIdx = header.findIndex(h => h === 'text' || h === 'dialog_text');
+      const textIdx = header.findIndex(h => structuredAliases.includes(h));
       const hostIdx = header.findIndex(h => h === 'host');
       const interruptIdx = header.findIndex(h => h === 'interrupt');
       
