@@ -53,12 +53,23 @@
     .meta-host { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
     .meta-interrupt { background: #fff5eb; color: #d97706; border: 1px solid #fde6ce; }
     
-    .chat-header-tools { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+    .chat-header-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; flex: 0 1 auto; }
     .chat-nav-pair { display: inline-flex; align-items: center; gap: 6px; }
     .nav-button { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: #424852; font-size: 26px; line-height: 1; cursor: pointer; }
     
     .viewer-control { display: grid; gap: 3px; color: #546475; font-size: 11px; font-weight: 800; }
     .viewer-control select { height: 34px; max-width: 150px; border: 1px solid var(--line); border-radius: 999px; padding: 0 26px 0 10px; background: rgba(255, 255, 255, .78); color: #28313d; font-size: 12px; cursor: pointer; }
+    .index-toggle { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255, 255, 255, .78); color: #28313d; font-size: 12px; white-space: nowrap; cursor: pointer; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
+    .index-toggle[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+    .index-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .index-toggle-track { position: relative; width: 32px; height: 18px; flex: 0 0 auto; border-radius: 999px; background: #929dac; box-shadow: inset 0 1px 2px rgba(20, 26, 36, .12); transition: background-color .2s ease; }
+    .index-toggle-thumb { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(20, 26, 36, .25); transition: transform .22s cubic-bezier(.2, .8, .2, 1); }
+    .index-toggle[aria-checked="true"] .index-toggle-track { background: var(--accent); }
+    .index-toggle[aria-checked="true"] .index-toggle-thumb { transform: translateX(14px); }
+    .index-toggle-state { min-width: 24px; font-size: 11px; font-weight: 800; text-align: center; }
+    @media (prefers-reduced-motion: reduce) {
+      .index-toggle, .index-toggle-track, .index-toggle-thumb { transition: none; }
+    }
     
     .conversation-index-control { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 999px; min-height: 34px; padding: 3px 8px; background: rgba(255, 255, 255, .7); color: var(--muted); font-size: 12px; font-weight: 800; }
     .conversation-index-input { width: 34px; height: 24px; border: 0; border-radius: 6px; padding: 0 3px; background: transparent; color: #1f6fea; font: inherit; text-align: center; }
@@ -73,6 +84,8 @@
     .message-stack { max-width: min(68%, 620px); }
     .speaker { margin-bottom: 4px; color: #334354; font-size: 12px; }
     .me-speaker { text-align: right; }
+    .message-source-index { display: inline-block; margin-inline-end: 5px; padding: 0 5px; border-radius: 4px; background: rgba(255, 255, 255, .65); color: #334354; font-size: 11px; font-weight: 700; line-height: 1.4; vertical-align: baseline; overflow-wrap: anywhere; }
+    .chat-body:not(.show-message-indices) .message-source-index { display: none; }
     .bubble { padding: 9px 11px; border-radius: 6px; background: #fff; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
     .me .bubble { background: var(--kakao); }
     
@@ -166,6 +179,11 @@
                 <option value="">자동 (Host/나)</option>
               </select>
             </label>
+            <button id="messageIndexToggle" class="index-toggle" type="button" role="switch" aria-checked="false" aria-label="인덱스 표시" aria-controls="chatBody">
+              <span>인덱스 표시</span>
+              <span class="index-toggle-track" aria-hidden="true"><span class="index-toggle-thumb"></span></span>
+              <span id="messageIndexToggleState" class="index-toggle-state" aria-hidden="true">OFF</span>
+            </button>
             <span class="conversation-index-control" aria-label="대화 번호 이동">
               <input
                 id="conversationIndexInput"
@@ -227,9 +245,10 @@
         <h3>💡 텍스트 모드 사용법 (Legacy)</h3>
         <ol>
           <li>구글 시트의 단일 텍스트 셀 묶음이나 메모장 등에서 대화 기록 복사</li>
-          <li>우측 입력 창에 그대로 붙여넣기<br><small style="color:var(--muted);">(※ <code>1. 화자:</code>, <code>0 - 화자:</code>, 번호 없는 포맷, 시트 묶음 <code>""</code> 모두 자동 감지)</small></li>
+          <li>우측 입력 창에 그대로 붙여넣기<br><small style="color:var(--muted);">(※ <code>1 화자:</code>, <code>1.화자:</code>, <code>0 - 화자:</code>, <code>[1] 화자:</code>, 번호 없는 포맷, 시트 묶음 <code>""</code> 모두 자동 감지)</small></li>
           <li><code>파싱하여 뷰어에 띄우기</code> 버튼 클릭</li>
         </ol>
+        <p>인덱스는 맨 앞의 숫자가 공백·탭 또는 기호로 발화자명과 분리된 경우에 인식합니다. <code>1민수</code>, <code>민수1</code>, <code>사용자_2</code>는 이름 그대로 유지합니다. <code>1-민수</code>는 인덱스 1과 이름 민수로 해석하며, <code>:</code>는 발화자와 본문의 구분자입니다. 상단의 <strong>인덱스 표시</strong> 스위치로 번호를 켜거나 끌 수 있습니다.</p>
         <h3>⌨️ 단축키</h3>
         <ul>
           <li><kbd>Q</kbd> : <strong>이전 대화방</strong>으로 이동</li>
@@ -244,7 +263,8 @@
     const state = {
       conversations: [],
       index: 0,
-      viewerSpeaker: null
+      viewerSpeaker: null,
+      showMessageIndices: false
     };
 
     const el = {
@@ -261,6 +281,8 @@
       rawTextInput: document.getElementById("rawTextInput"),
       parseButton: document.getElementById("parseButton"),
       viewerSpeaker: document.getElementById("viewerSpeaker"),
+      messageIndexToggle: document.getElementById("messageIndexToggle"),
+      messageIndexToggleState: document.getElementById("messageIndexToggleState"),
       helpButton: document.getElementById("helpButton"),
       helpModal: document.getElementById("helpModal"),
       closeHelpButton: document.getElementById("closeHelpButton"),
@@ -270,6 +292,14 @@
       el.parseButton.addEventListener("click", handleParse);
       el.prevButton.addEventListener("click", () => navigate(-1));
       el.nextButton.addEventListener("click", () => navigate(1));
+      el.messageIndexToggle.addEventListener("click", () => {
+        const scrollTop = el.chatBody.scrollTop;
+        state.showMessageIndices = !state.showMessageIndices;
+        el.messageIndexToggle.setAttribute("aria-checked", String(state.showMessageIndices));
+        el.messageIndexToggleState.textContent = state.showMessageIndices ? "ON" : "OFF";
+        el.chatBody.classList.toggle("show-message-indices", state.showMessageIndices);
+        el.chatBody.scrollTop = scrollTop;
+      });
       
       el.viewerSpeaker.addEventListener("change", () => {
         state.viewerSpeaker = el.viewerSpeaker.value || null;
@@ -323,7 +353,7 @@
       const isStructured = structuredAliases.some(alias => firstLine.includes(alias));
 
       if (isStructured) {
-        const delimiter = rawText.includes('\t') ? '\t' : (rawText.includes(',') ? ',' : null);
+        const delimiter = firstLine.includes('\t') ? '\t' : (firstLine.includes(',') ? ',' : null);
         if (delimiter) {
           const rows = parseDSV(rawText, delimiter);
           const convs = parseStructuredData(rows);
@@ -409,39 +439,54 @@
       return conversations;
     }
 
+    function parseMessageHeader(header) {
+      let speaker = header.trim();
+      let sourceIndex = null;
+      // A colon has already separated the header from the body. Only split
+      // a leading number when whitespace or punctuation marks its boundary.
+      const numbered = speaker.match(/^(\d+)(.*)$/u);
+      const wrapped = speaker.match(/^([\[({<【（［｛〈《「『])(\d+)([\])}>】）］｝〉》」』])(.*)$/u);
+      const closingBrackets = { '[': ']', '(': ')', '{': '}', '<': '>', '【': '】', '（': '）', '［': '］', '｛': '｝', '〈': '〉', '《': '》', '「': '」', '『': '』' };
+      // Stop after the separator's whitespace so names such as "@민수" or
+      // "[운영자]" keep their own punctuation (e.g. "1. @민수").
+      const separator = /^(?:[\p{P}\p{S}ㆍ]+[^\S\r\n]*|[^\S\r\n]+(?:[\p{P}\p{S}ㆍ]+[^\S\r\n]+)*)/u;
+      if (numbered) {
+        const boundary = numbered[2].match(separator);
+        const name = boundary && numbered[2].slice(boundary[0].length).trim();
+        if (name && !/^[\s\p{P}ㆍ]+$/u.test(name)) {
+          sourceIndex = numbered[1];
+          speaker = name;
+        }
+      } else if (wrapped && closingBrackets[wrapped[1]] === wrapped[3]) {
+        const name = wrapped[4].replace(separator, '').trim();
+        if (name && !/^[\s\p{P}ㆍ]+$/u.test(name)) {
+          sourceIndex = wrapped[2];
+          speaker = name;
+        }
+      }
+      if (!speaker || speaker.length > 30 || /^(?:http|https)$/i.test(speaker)) return null;
+      return { speaker, sourceIndex };
+    }
+
     function parseConversationText(textBlock) {
       const lines = textBlock.split('\n');
       const currentMessages = [];
-      let isNumberedMode = false;
-      let lastNum = -1;
-
-      function isValidSpeaker(name) {
-        const lower = name.toLowerCase();
-        return lower !== 'http' && lower !== 'https';
-      }
 
       lines.forEach(line => {
         const trimmed = line.trim();
         if (!trimmed) return;
 
-        const numMatch = trimmed.match(/^(\d+)(?:\.\s+|\s*-\s+)([^:\n]{1,30}):\s*(.*)$/);
-        if (numMatch && isValidSpeaker(numMatch[2].trim())) {
-          lastNum = parseInt(numMatch[1], 10);
-          isNumberedMode = true;
-          currentMessages.push({ speaker: numMatch[2].trim(), text: numMatch[3].trim() });
-          return;
-        }
-
-        const stdMatch = trimmed.match(/^([^:\n]{1,30}):\s*(.*)$/);
-        if (stdMatch && isValidSpeaker(stdMatch[1].trim())) {
-          currentMessages.push({ speaker: stdMatch[1].trim(), text: stdMatch[2].trim() });
+        const messageMatch = trimmed.match(/^([^:\n]+):\s*(.*)$/);
+        const header = messageMatch && parseMessageHeader(messageMatch[1]);
+        if (header) {
+          currentMessages.push({ ...header, text: messageMatch[2].trim() });
           return;
         }
 
         if (currentMessages.length > 0) {
           currentMessages[currentMessages.length - 1].text += '\n' + trimmed;
         } else {
-          currentMessages.push({ speaker: "시스템", text: trimmed });
+          currentMessages.push({ speaker: "시스템", text: trimmed, sourceIndex: null });
         }
       });
 
@@ -455,14 +500,17 @@
           return p1 + innerText.replace(/""/g, '"') + '\n|||BLOCK_END|||\n';
       });
 
-      text = text.replace(/([^\d\s\n])(\d+(?:\.\s+|\s*-\s+)[^:\n]{1,30}:)/g, '$1\n$2');
+      // Repair concatenated messages only in the body, never inside a name.
+      text = text.replace(/^([^:\n]+:)(.*)$/gm, (match, header, body) => {
+        return header + body.replace(/([^\d\s\n])(\d+(?:\.\s+|\s*-\s+)[^:\n]{1,30}:)/g, '$1\n$2');
+      });
       text = text.replace(/([^\s\n])(ego_\d+-sess-[a-z0-9]+(?=(?:\n|(?:\d+(?:\.\s+|\s*-\s+))?[^:\n]{1,30}:)))/gi, '$1\n$2');
 
       const parsedConversations = [];
       let currentTopic = '';
       let convCounter = 1;
 
-      const chunks = text.split(/(?:\|\|\|BLOCK_END\|\|\||\n\s*\n|---)/);
+      const chunks = text.split(/(?:\|\|\|BLOCK_END\|\|\||\n\s*\n|^[^\S\n]*---[^\S\n]*$)/m);
       chunks.forEach(chunk => {
         let blockText = chunk;
         const lines = chunk.split('\n');
@@ -601,11 +649,14 @@
     function renderMessage(message, side) {
       const speaker = escapeHtml(message.speaker);
       const text = escapeHtml(message.text);
+      const sourceIndex = message.sourceIndex != null
+        ? `<span class="message-source-index" aria-label="인덱스 ${escapeHtml(message.sourceIndex)}">${escapeHtml(message.sourceIndex)}</span>`
+        : "";
       
       if (side === "system") {
         return `
           <div class="message-row system">
-            <div class="bubble">${text}</div>
+            <div class="bubble">${sourceIndex}${text}</div>
           </div>
         `;
       }
@@ -617,7 +668,7 @@
         return `
           <div class="message-row me">
             <div class="message-stack">
-              <div class="speaker me-speaker">${speaker}</div>
+              <div class="speaker me-speaker">${sourceIndex}${speaker}</div>
               <div class="bubble">${text}</div>
             </div>
             ${avatar}
@@ -628,7 +679,7 @@
         <div class="message-row">
           ${avatar}
           <div class="message-stack">
-            <div class="speaker">${speaker}</div>
+            <div class="speaker">${sourceIndex}${speaker}</div>
             <div class="bubble">${text}</div>
           </div>
         </div>
